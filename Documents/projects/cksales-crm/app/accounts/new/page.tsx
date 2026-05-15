@@ -64,19 +64,18 @@ export default function NewAccountPage() {
             />
           </div>
 
-          {/* Territory Field */}
+         {/* Territory Field */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Territory</label>
-            <select 
+            <label className="block text-sm font-bold text-gray-700 mb-2">State / Territory</label>
+            <input 
+              type="text" 
               value={territory}
-              onChange={(e) => setTerritory(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Select a territory...</option>
-              <option value="New York State">New York State</option>
-              <option value="Northern New Jersey">Northern New Jersey</option>
-              <option value="New England">New England</option>
-            </select>
+              // This automatically capitalizes the letters as you type!
+              onChange={(e) => setTerritory(e.target.value.toUpperCase())} 
+              placeholder="e.g. NY, NJ, MA"
+              maxLength={2} // Keeps it to 2 letters
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500"
+            />
           </div>
 
           {/* Phone Field */}

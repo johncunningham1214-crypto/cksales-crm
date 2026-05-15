@@ -1,6 +1,8 @@
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AccountProfile(props: any) {
   const params = await props.params;
   const accountId = params.id;
@@ -43,9 +45,11 @@ export default async function AccountProfile(props: any) {
             <h1 className="text-4xl font-black text-gray-900">{account.name}</h1>
             <p className="text-gray-500 font-medium text-lg mt-1">{account.territory || 'No territory assigned'}</p>
           </div>
-          <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-            Edit Account
-          </button>
+          <Link href={`/accounts/${accountId}/edit`}>
+  <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+    Edit Account
+  </button>
+</Link>
         </div>
       </div>
 
