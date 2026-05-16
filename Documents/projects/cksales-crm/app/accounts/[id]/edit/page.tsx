@@ -15,8 +15,6 @@ export default function EditAccountPage() {
   const [territory, setTerritory] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('Active');
-  
-  // A loading state so the screen doesn't look broken while fetching data
   const [isLoading, setIsLoading] = useState(true);
 
   // 1. Fetch the existing data when the page loads
@@ -54,7 +52,7 @@ export default function EditAccountPage() {
         phone: phone,
         status: status 
       })
-      .eq('id', accountId); // Make SURE we only update this specific account!
+      .eq('id', accountId);
 
     if (error) {
       console.error('Error updating account:', error);
@@ -62,6 +60,46 @@ export default function EditAccountPage() {
     } else {
       router.push(`/accounts/${accountId}`);
       router.refresh();
+    }
+  };
+
+  // 3. The Danger Zone: Delete the account and manage its relationships
+  const handleDelete = async () => {
+    const isConfirmed = window.confirm("🚨 DANGER ZONE 🚨\n\nAre you absolutely sure you want to permanently delete this account? (Field notes will be deleted. Any attached contacts or branches will be safely unlinked.)");
+
+    if (isConfirmed) {
+      // Step A: Delete attached field notes (calls) so they don't block us
+      await supabase
+        .from('calls')
+        .delete()
+        .eq('account_id', accountId);
+
+      // Step B: Unlink attached contacts (so they don't get deleted from your Address Book)
+      await supabase
+        .from('contacts')
+        .update({ account_id: null })
+        .eq('account_id', accountId);
+
+      // Step C: Unlink any child branches (if you are deleting a Major Account HQ)
+      await supabase
+        .from('accounts')
+        .update({ parent_id: null })
+        .eq('parent_id', accountId);
+
+      // Step D: Now that all the connections are cleared, it is safe to delete the account!
+      const { error } = await supabase
+        .from('accounts')
+        .delete()
+        .eq('id', accountId);
+
+      if (error) {
+        // We added .message and .details here so it never gives us a blank {} again!
+        console.error('Error deleting account:', error.message, error.details, error.hint);
+        alert(`Failed to delete account: ${error.message}`);
+      } else {
+        router.push('/accounts');
+        router.refresh();
+      }
     }
   };
 
@@ -82,7 +120,6 @@ export default function EditAccountPage() {
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
         <div className="space-y-6">
           
-          {/* Name Field */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Account Name *</label>
             <input 
@@ -94,21 +131,18 @@ export default function EditAccountPage() {
             />
           </div>
 
-        {/* Territory Field */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">State / Territory</label>
             <input 
               type="text" 
               value={territory}
-              // This automatically capitalizes the letters as you type!
               onChange={(e) => setTerritory(e.target.value.toUpperCase())} 
               placeholder="e.g. NY, NJ, MA"
-              maxLength={2} // Keeps it to 2 letters
+              maxLength={2}
               className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500"
             />
           </div>
 
-          {/* Phone Field */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
             <input 
@@ -119,7 +153,6 @@ export default function EditAccountPage() {
             />
           </div>
 
-          {/* Status Field - New! */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
             <select 
@@ -146,6 +179,21 @@ export default function EditAccountPage() {
           </button>
         </div>
       </form>
+
+      {/* --- DANGER ZONE --- */}
+      <div className="mt-12 pt-8 border-t border-red-100">
+        <h3 className="text-red-800 font-black text-lg mb-2">Danger Zone</h3>
+        <p className="text-sm text-red-600 mb-4">
+          Permanently remove this account and all associated field notes from the database. This action cannot be reversed.
+        </p>
+        <button 
+          type="button"
+          onClick={handleDelete}
+          className="bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-lg font-bold hover:bg-red-600 hover:text-white transition-colors"
+        >
+          Delete Account
+        </button>
+      </div>
     </div>
   );
 }

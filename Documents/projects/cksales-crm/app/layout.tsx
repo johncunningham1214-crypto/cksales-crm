@@ -23,6 +23,8 @@ export default function RootLayout({
           <nav className="flex-1 p-4 space-y-2">
   <Link href="/" className="block p-3 rounded hover:bg-slate-800">Dashboard</Link>
   <Link href="/accounts" className="block p-3 rounded hover:bg-slate-800">Accounts</Link>
+  <Link href="/contacts" className="block p-3 rounded hover:bg-slate-800">Contacts
+   </Link>
   <Link href="/library" className="block p-3 rounded hover:bg-slate-800">Tech Library</Link>
   <Link href="/leads" className="block p-3 rounded hover:bg-slate-800">Leads</Link>
 </nav>
