@@ -67,10 +67,10 @@ export default function ContactsPage() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {isLoading ? (
-              <tr><td colSpan={3} className="p-8 text-center text-gray-400">Loading contacts...</td></tr>
+              <tr key="loading"><td colSpan={3} className="p-8 text-center text-gray-400">Loading contacts...</td></tr>
             ) : filteredContacts.length > 0 ? (
-              filteredContacts.map((contact) => (
-                <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
+              filteredContacts.map((contact,index) => (
+                <tr key={contact.id || index} className="hover:bg-gray-50 transition-colors">
                   <td className="p-4">
                     <div className="font-bold text-gray-900 text-lg">
                       {contact.first_name} {contact.last_name}
@@ -97,7 +97,7 @@ export default function ContactsPage() {
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={3} className="p-8 text-center text-gray-400">No contacts found.</td></tr>
+              <tr key="empty"><td colSpan={3} className="p-8 text-center text-gray-400">No contacts found.</td></tr>
             )}
           </tbody>
         </table>
