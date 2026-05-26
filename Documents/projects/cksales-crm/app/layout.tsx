@@ -3,8 +3,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HVAC CRM",
-  description: "Sales & Technical Management",
+  title: "HVAC Field Command",
+  description: "Territory management and field notes",
+  manifest: "/manifest.json",
+};
+
+// Add this right below the metadata block to set the top-bar color on mobile
+export const viewport = {
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
@@ -20,11 +26,11 @@ export default function RootLayout({
           <div className="p-6 text-xl font-bold border-b border-slate-800">
             HVAC <span className="text-blue-400">CRM</span>
           </div>
-          <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2">
   <Link href="/" className="block p-3 rounded hover:bg-slate-800">Dashboard</Link>
   <Link href="/accounts" className="block p-3 rounded hover:bg-slate-800">Accounts</Link>
-  <Link href="/contacts" className="block p-3 rounded hover:bg-slate-800">Contacts
-   </Link>
+  <Link href="/contacts" className="block p-3 rounded hover:bg-slate-800">Contacts</Link>
+  <Link href="/tasks" className="block p-3 rounded hover:bg-slate-800">Tasks</Link>
   <Link href="/library" className="block p-3 rounded hover:bg-slate-800">Tech Library</Link>
   <Link href="/leads" className="block p-3 rounded hover:bg-slate-800">Leads</Link>
 </nav>
