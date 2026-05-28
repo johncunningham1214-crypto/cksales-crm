@@ -4,157 +4,154 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
-export default function ActionItemsPage() {
+export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<any[]>([]);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-
-// Fetch all tasks, plus the names of any linked accounts or contacts
-  const fetchTasks = async () => {
-    const { data, error } = await supabase
-      .from('action_items')
-      .select(`
-        *,
-        accounts ( name ),
-        contacts ( first_name, last_name )
-      `)
-      .order('is_completed', { ascending: true }) // Open tasks at the top
-      .order('created_at', { ascending: false }); // Newest tasks first
-
-    if (error) {
-      console.error("Fetch Error:", error);
-      alert("Error loading tasks: " + error.message);
-    }
-
-    if (data) setTasks(data);
-    setIsLoading(false);
-  };
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
-// Quick-add a global task (no specific account linked yet)
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskTitle.trim()) return;
+  async function fetchTasks() {
+    // We are pulling the tasks and linking them directly to the account name
+    const { data, error } = await supabase
+      .from('tasks') // Note: If your table is still 'action_items', change it here!
+      .select(`
+        *,
+        accounts(name, territory)
+      `)
+      .order('due_date', { ascending: true }); // Closest due dates at the top
+    
+    if (error) {
+      console.error("Error fetching tasks:", error);
+    } else if (data) {
+      setTasks(data);
+    }
+    setIsLoading(false);
+  }
 
+  // Quick-complete feature! Lets you check off tasks directly from this page.
+  const toggleTaskStatus = async (taskId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Pending' ? 'Completed' : 'Pending';
+    
+    // 1. Update the UI instantly so it feels fast
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+
+    // 2. Save it to the database quietly in the background
     const { error } = await supabase
-      .from('action_items')
-      .insert([{ title: newTaskTitle, is_completed: false }]);
+      .from('tasks')
+      .update({ status: newStatus })
+      .eq('id', taskId);
 
     if (error) {
-      // This will now pop up an alert telling us exactly what the database is mad about!
-      console.error("Database Error:", error);
-      alert("Failed to save task: " + error.message);
-    } else {
-      setNewTaskTitle('');
-      fetchTasks();
+      alert("Failed to update task. Check your connection.");
+      fetchTasks(); // Revert if it failed
     }
   };
 
-  // Toggle a task between complete/incomplete
-  const toggleComplete = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from('action_items')
-      .update({ is_completed: !currentStatus })
-      .eq('id', id);
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading dispatch board...</div>;
+  }
 
-    if (!error) fetchTasks();
-  };
-
-  // Delete a task permanently
-  const deleteTask = async (id: string) => {
-    if (!window.confirm('Delete this task?')) return;
-    
-    const { error } = await supabase
-      .from('action_items')
-      .delete()
-      .eq('id', id);
-
-    if (!error) fetchTasks();
-  };
+  // Split tasks into two buckets for the UI
+  const pendingTasks = tasks.filter(t => t.status !== 'Completed');
+  const completedTasks = tasks.filter(t => t.status === 'Completed');
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-4xl font-black text-gray-900">Action Items</h1>
-        <p className="text-gray-600 mt-2 font-medium">Track your follow-ups, promises, and to-dos.</p>
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Team Tasks</h1>
+          <p className="text-gray-500 mt-2 font-medium">Global dispatch board for all field reps.</p>
+        </div>
+        <Link href="/tasks/new" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Add Task
+        </Link>
       </div>
 
-      {/* Quick Add Form */}
-      <form onSubmit={handleAddTask} className="mb-8 flex gap-3">
-        <input 
-          type="text" 
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          placeholder="e.g., Email new LG pricing sheet to Johnstone Supply..."
-          className="flex-1 border border-gray-300 rounded-xl p-4 text-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-        />
-        <button 
-          type="submit" 
-          className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 shadow-sm transition-colors"
-        >
-          Add Task
-        </button>
-      </form>
-
-      {/* Task List */}
+      {/* PENDING TASKS */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500 font-medium">Loading tasks...</div>
-        ) : tasks.length === 0 ? (
-          <div className="p-12 text-center text-gray-400 font-medium bg-gray-50">
-            You're all caught up! No open action items.
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {tasks.map((task) => (
-              <div key={task.id} className={`p-4 px-6 flex items-center gap-4 transition-colors hover:bg-gray-50 group ${task.is_completed ? 'bg-gray-50 opacity-75' : 'bg-white'}`}>
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-900">
+            Pending Actions ({pendingTasks.length})
+          </h2>
+        </div>
+        
+        <div className="divide-y divide-gray-100">
+          {pendingTasks.length > 0 ? (
+            pendingTasks.map((task) => (
+              <div key={task.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 
-                {/* Checkbox */}
-                <input 
-                  type="checkbox" 
-                  checked={task.is_completed}
-                  onChange={() => toggleComplete(task.id, task.is_completed)}
-                  className="w-6 h-6 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-
-                {/* Task Details */}
                 <div className="flex-1">
-                  <p className={`text-lg font-bold ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                    {task.title}
-                  </p>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-lg font-bold text-gray-900">{task.title}</h3>
+                    <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                      Pending
+                    </span>
+                  </div>
                   
-                  {/* Show Account/Contact Badges if they exist */}
-                  {(task.accounts || task.contacts) && (
-                    <div className="flex gap-2 mt-1">
-                      {task.accounts && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                          🏢 {task.accounts.name}
-                        </span>
-                      )}
-                      {task.contacts && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                          👤 {task.contacts.first_name} {task.contacts.last_name}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm mt-2">
+                    <Link href={`/accounts/${task.account_id}`} className="font-bold text-blue-600 hover:underline">
+                      🏢 {task.accounts?.name || 'Unknown Branch'}
+                    </Link>
+                    <span className="text-gray-500 font-medium">
+                      👤 {task.rep_name || 'Unassigned'}
+                    </span>
+                    <span className={`font-medium ${
+                      task.due_date && new Date(task.due_date) < new Date() ? 'text-red-600' : 'text-gray-500'
+                    }`}>
+                      📅 {task.due_date || 'No Date'}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Delete Button */}
                 <button 
-                  onClick={() => deleteTask(task.id)}
-                  className="text-red-400 hover:text-red-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity px-4 py-2"
+                  onClick={() => toggleTaskStatus(task.id, task.status)}
+                  className="w-full md:w-auto bg-white border-2 border-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-bold hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all shrink-0"
                 >
-                  Delete
+                  ✓ Mark Complete
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="p-12 text-center text-gray-500">
+              No pending tasks. The board is clear!
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* COMPLETED TASKS (Shows at the bottom) */}
+      {completedTasks.length > 0 && (
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-100">
+            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+              Recently Completed ({completedTasks.length})
+            </h2>
+          </div>
+          
+          <div className="divide-y divide-gray-200">
+            {completedTasks.map((task) => (
+              <div key={task.id} className="p-4 px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="font-bold text-gray-600 line-through">{task.title}</h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {task.accounts?.name} • Completed by {task.rep_name}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => toggleTaskStatus(task.id, task.status)}
+                  className="text-sm font-bold text-blue-600 hover:underline"
+                >
+                  Undo
                 </button>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -43,25 +43,28 @@ export default function RootLayout({
           
           {/* SIDEBAR (Hidden on tiny mobile screens, visible on tablets/desktops) */}
           <aside className="w-64 bg-gray-900 text-white flex-shrink-0 overflow-y-auto hidden md:block">
-            <nav className="p-4 space-y-2 mt-4">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-4">Menu</div>
-              <Link href="/" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-                📊 Dashboard
-              </Link>
-              <Link href="/accounts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-                🏢 Accounts
-              </Link>
-              <Link href="/contacts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-                👥 Contacts
-              </Link>
-              <Link href="/tasks" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-                ✅ Tasks
-              </Link>
-              <Link href="/library" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-                📚 Tech Library
-              </Link>
-            </nav>
-          </aside>
+  <nav className="p-4 space-y-2 mt-4">
+    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-4">Menu</div>
+    <Link href="/" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      📊 Dashboard
+    </Link>
+    <Link href="/accounts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      🏢 Accounts
+    </Link>
+    <Link href="/routing" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      🗺️ Territory Routing
+    </Link>
+    <Link href="/contacts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      👥 Contacts
+    </Link>
+    <Link href="/tasks" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      ✅ Tasks
+    </Link>
+    <Link href="/library" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      📚 Tech Library
+    </Link>
+  </nav>
+</aside>
 
           {/* SCROLLABLE PAGE CONTENT */}
           <main className="flex-1 overflow-y-auto">

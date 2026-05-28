@@ -3,19 +3,18 @@
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 
-function LogVisitForm() {
+function NewTaskForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preSelectedAccountId = searchParams.get('accountId');
 
   const [accounts, setAccounts] = useState<any[]>([]);
   const [accountId, setAccountId] = useState(preSelectedAccountId || '');
-  const [repName, setRepName] = useState(''); // NEW: Tracks the rep's name
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [type, setType] = useState('Branch Visit');
-  const [notes, setNotes] = useState('');
+  const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [repName, setRepName] = useState('');
+  const [status, setStatus] = useState('Pending');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -33,23 +32,24 @@ function LogVisitForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accountId) return alert("Please select an account.");
-    if (!repName) return alert("Please select your name.");
+    if (!repName) return alert("Please select who this is assigned to.");
     
     setIsSubmitting(true);
 
+    // IMPORTANT: Change 'tasks' to 'action_items' below if that's what your database uses!
     const { error } = await supabase
-      .from('calls')
+      .from('tasks')
       .insert([{ 
         account_id: accountId, 
-        rep_name: repName, // NEW: Saves the rep's name to the database
-        date, 
-        type, 
-        notes 
+        title, 
+        due_date: dueDate || null, 
+        rep_name: repName,
+        status 
       }]);
 
     if (error) {
-      console.error("Error saving visit:", error);
-      alert("Failed to save visit: " + error.message);
+      console.error("Error saving task:", error);
+      alert("Failed to save task: " + error.message);
       setIsSubmitting(false);
     } else {
       router.push(`/accounts/${accountId}`);
@@ -57,39 +57,24 @@ function LogVisitForm() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+    <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
       <div className="px-8 py-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-900">Log Field Activity</h2>
+        <h2 className="text-xl font-bold text-gray-900">Add New Task</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="p-8 space-y-6">
         
+        {/* Branch & Assigned Rep */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* NEW: Rep Selector */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Team Member</label>
-            <select 
-              required
-              value={repName}
-              onChange={(e) => setRepName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
-            >
-              <option value="" disabled>Who is logging this?</option>
-              <option value="John">John</option>
-              <option value="Alejandro">Alejandro</option>
-            </select>
-          </div>
-
-          {/* Account Selection */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Account / Branch</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Branch</label>
             <select 
               required
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
             >
-              <option value="" disabled>Select an account...</option>
+              <option value="" disabled>Select a branch...</option>
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id}>
                   {acc.name} {acc.territory ? `(${acc.territory})` : ''}
@@ -97,50 +82,58 @@ function LogVisitForm() {
               ))}
             </select>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Date Picker */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>
-            <input 
-              type="date" 
-              required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
-            />
-          </div>
-
-          {/* Activity Type */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Activity Type</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Assigned To</label>
             <select 
-              value={type}
-              onChange={(e) => setType(e.target.value)}
+              required
+              value={repName}
+              onChange={(e) => setRepName(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
             >
-              <option value="Branch Visit">Branch Visit</option>
-              <option value="Counter Day">Counter Day</option>
-              <option value="Lunch & Learn">Lunch & Learn</option>
-              <option value="Follow-up">Follow-up</option>
-              <option value="Cold Call">Cold Call</option>
-              <option value="Other">Other</option>
+              <option value="" disabled>Who is doing this?</option>
+              <option value="John">John</option>
+              <option value="Alejandro">Alejandro</option>
             </select>
           </div>
         </div>
 
-        {/* Field Notes */}
+        {/* Task Details */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Field Notes</label>
-          <textarea 
+          <label className="block text-sm font-bold text-gray-700 mb-2">What needs to be done?</label>
+          <input 
+            type="text" 
             required
-            rows={5}
-            placeholder="Who did you speak with? What was discussed? Any follow-up needed?"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none resize-none"
-          ></textarea>
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Send Supco pump pricing sheet"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+          />
+        </div>
+
+        {/* Date & Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Due Date (Optional)</label>
+            <input 
+              type="date" 
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
+            <select 
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -157,7 +150,7 @@ function LogVisitForm() {
             disabled={isSubmitting}
             className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
           >
-            {isSubmitting ? 'Saving...' : 'Save Visit'}
+            {isSubmitting ? 'Saving...' : 'Save Task'}
           </button>
         </div>
       </form>
@@ -165,14 +158,17 @@ function LogVisitForm() {
   );
 }
 
-export default function LogVisitPage() {
+export default function NewTaskPage() {
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <Link href="/" className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block">
-        ← Back to Dashboard
-      </Link>
+      <button 
+        onClick={() => window.history.back()} 
+        className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block cursor-pointer"
+      >
+        ← Back
+      </button>
       <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading form...</div>}>
-        <LogVisitForm />
+        <NewTaskForm />
       </Suspense>
     </div>
   );
