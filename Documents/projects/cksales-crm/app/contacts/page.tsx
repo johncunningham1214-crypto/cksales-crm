@@ -39,9 +39,14 @@ export default function ContactsDirectory() {
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight">Global Directory</h1>
-        <p className="text-gray-500 mt-2 font-medium">All field contacts and branch staff.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Master Directory</h1>
+          <p className="text-gray-500 mt-2 font-medium">Your complete list of branch personnel and relationships.</p>
+        </div>
+        <Link href="/contacts/new" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Add Contact
+        </Link>
       </div>
 
       {/* Search Bar */}
@@ -70,7 +75,12 @@ export default function ContactsDirectory() {
                 
                 {/* Contact Identity */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">{contact.name}</h3>
+                  <Link href={`/contacts/${contact.id}`} className="group inline-block">
+  <h3 className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors flex items-center gap-2">
+    {contact.name}
+    <span className="opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity">→</span>
+  </h3>
+</Link>
                   <p className="text-sm font-medium text-blue-600">{contact.title || 'Staff'}</p>
                   
                   {/* Branch Association */}

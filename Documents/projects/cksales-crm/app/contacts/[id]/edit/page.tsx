@@ -15,7 +15,7 @@ export default function EditContactForm() {
   const [title, setTitle] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  
+  const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,6 +42,7 @@ export default function EditContactForm() {
         setTitle(data.title || '');
         setPhone(data.phone || '');
         setEmail(data.email || '');
+        setNotes(data.notes || '');
       } else if (error) {
         console.error("Error fetching contact:", error);
       }
@@ -60,7 +61,7 @@ export default function EditContactForm() {
 
     const { error } = await supabase
       .from('contacts')
-      .update({ account_id: accountId, name, title, phone, email })
+      .update({ account_id: accountId, name, title, phone, email, notes })
       .eq('id', contactId);
 
     if (error) {
@@ -172,6 +173,17 @@ export default function EditContactForm() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
               />
             </div>
+          </div>
+          {/* Additional Notes (Spans full width) */}
+          <div className="pt-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">Personal Notes & Info</label>
+            <textarea 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none resize-y"
+              placeholder="e.g., Prefers text messages, massive Yankees fan, needs extra spec sheets for counter displays..."
+            />
           </div>
 
           {/* UPDATED: Action Buttons with Delete */}

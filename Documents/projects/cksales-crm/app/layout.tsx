@@ -60,7 +60,7 @@ export default function RootLayout({
     <Link href="/tasks" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
       ✅ Tasks
     </Link>
-    <Link href="/library" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+    <Link href="/tech-library" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
       📚 Tech Library
     </Link>
   </nav>
