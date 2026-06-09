@@ -1,275 +1,210 @@
 "use client";
 
-import React, { useState, useEffect, Fragment } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { TERRITORIES, SALES_TEAM } from '@/lib/constants';
 
-export default function AccountsPage() {
+export default function AccountsDirectory() {
   const [accounts, setAccounts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState('Branches'); // 'Branches' or 'Major'
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   
-  // NEW: State to track which Major Account row is expanded
-  const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
-
-  const eastCoastStates = [
-    'All', 'ME', 'NH', 'VT', 'MA', 'RI', 'CT', 'NY', 'NJ', 
-    'PA', 'DE', 'MD', 'VA', 'NC', 'SC', 'GA', 'FL'
-  ];
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [territoryFilter, setTerritoryFilter] = useState('All');
+  const [salesmanFilter, setSalesmanFilter] = useState('All');
+  const [accountTypeFilter, setAccountTypeFilter] = useState('All'); // NEW: Hub vs Branch filter
 
   useEffect(() => {
     async function fetchAccounts() {
-      const { data, error } = await supabase
+      setIsLoading(true);
+      
+      let query = supabase
         .from('accounts')
-        .select(`
-          *,
-          calls ( date )
-        `)
+        .select('*')
         .order('name');
-
-      if (data) {
-        setAccounts(data);
-      } else if (error) {
-        console.error("Error fetching accounts:", error);
+        
+      // Filter by Territory
+      if (territoryFilter !== 'All') {
+        query = query.eq('territory', territoryFilter);
       }
+
+      // Filter by Assigned Salesman
+      if (salesmanFilter !== 'All') {
+        query = query.contains('assigned_reps', [salesmanFilter]);
+      }
+
+      // NEW: Filter by Account Type
+      if (accountTypeFilter === 'HQ') {
+        query = query.is('parent_id', null); // Main Hubs have NO parent
+      } else if (accountTypeFilter === 'Branch') {
+        query = query.not('parent_id', 'is', null); // Branches ALWAYS have a parent
+      }
+
+      const { data, error } = await query;
+      
+      if (data) setAccounts(data);
+      if (error) console.error("Error fetching accounts:", error);
+      
       setIsLoading(false);
     }
 
     fetchAccounts();
-  }, []);
+  }, [territoryFilter, salesmanFilter, accountTypeFilter]); // Added the new filter here
 
-  const searchedAndFiltered = accounts.filter(account => {
-    const matchesState = activeFilter === 'All' || account.territory === activeFilter;
-    const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesState && matchesSearch;
-  });
-
-  const majorAccounts = searchedAndFiltered.filter(a => a.is_parent);
-  const branchAccounts = searchedAndFiltered.filter(a => !a.is_parent);
-
-  const getParentName = (parentId: string) => {
-    if (!parentId) return '—';
-    const parent = accounts.find(a => a.id === parentId);
-    return parent ? parent.name : '—';
-  };
-
-  const getBranchCount = (parentId: string) => {
-    return accounts.filter(a => a.parent_id === parentId).length;
-  };
-
-  const getVisitStatus = (calls: any[]) => {
-    if (!calls || calls.length === 0) return { text: 'Never Visited', needsAttention: true };
-    const sortedCalls = calls.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const lastVisitDate = new Date(sortedCalls[0].date);
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-    return { 
-      text: lastVisitDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
-      needsAttention: lastVisitDate < sixtyDaysAgo 
-    };
-  };
-
-  // NEW: Function to toggle the dropdown
-  const toggleRow = (id: string) => {
-    if (expandedParentId === id) {
-      setExpandedParentId(null); // Close it if it's already open
-    } else {
-      setExpandedParentId(id); // Open the clicked one
-    }
-  };
+  const filteredAccounts = accounts.filter(acc => 
+    (acc.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (acc.address?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-black text-gray-900">Accounts</h1>
-        <Link href="/accounts/new">
-          <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 shadow-sm">
-            + New Account
-          </button>
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Accounts Directory</h1>
+          <p className="text-gray-500 mt-2 font-medium">Manage your network of distributors and branches.</p>
+        </div>
+        <Link 
+          href="/accounts/new"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"
+        >
+          + Add Account
         </Link>
       </div>
 
-      <div className="flex space-x-4 mb-6 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('Branches')}
-          className={`pb-4 px-2 text-lg font-bold border-b-4 transition-colors ${
-            activeTab === 'Branches' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          All Branches
-        </button>
-        <button
-          onClick={() => setActiveTab('Major')}
-          className={`pb-4 px-2 text-lg font-bold border-b-4 transition-colors ${
-            activeTab === 'Major' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Major Accounts HQ
-        </button>
-      </div>
-
-      <div className="relative mb-6">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <span className="text-gray-400">🔍</span>
-        </div>
-        <input
-          type="text"
-          placeholder="Search accounts by name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:border-blue-500 text-lg"
-        />
-      </div>
-
-      {activeTab === 'Branches' && (
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-2">
-            {eastCoastStates.map((state) => (
-              <button
-                key={state}
-                onClick={() => setActiveFilter(state)}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                  activeFilter === state 
-                    ? 'bg-gray-900 text-white shadow-md' 
-                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-900 hover:text-gray-900'
-                }`}
-              >
-                {state}
-              </button>
-            ))}
+      {/* Control Panel / Filters */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Search Bar */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Search</label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+            <input 
+              type="text" 
+              placeholder="Name or address..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
           </div>
         </div>
-      )}
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            {activeTab === 'Branches' ? (
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Branch Name</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Parent Company</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">State</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Last Visit</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase text-right">Action</th>
-              </tr>
-            ) : (
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Major Account</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Total Branches</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Status</th>
-                <th className="p-4 text-sm font-bold text-gray-500 uppercase text-right">Action</th>
-              </tr>
-            )}
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            
-            {isLoading ? (
-              <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">Loading accounts...</td></tr>
-            ) : activeTab === 'Branches' ? (
-              /* --- BRANCHES ROW --- */
-              branchAccounts.length > 0 ? (
-                branchAccounts.map((account) => {
-                  const visitStatus = getVisitStatus(account.calls);
-                  return (
-                    <tr key={account.id} className={`transition-colors group ${visitStatus.needsAttention ? 'hover:bg-orange-50/50' : 'hover:bg-gray-50'}`}>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {visitStatus.needsAttention && <span title="Needs Follow-up" className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>}
-                          <Link href={`/accounts/${account.id}`} className="font-bold text-gray-900 group-hover:text-blue-600">
-                            {account.name}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="p-4 text-gray-600 font-medium">
-                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-100">
-                          {getParentName(account.parent_id)}
-                        </span>
-                      </td>
-                      <td className="p-4 text-gray-600 font-medium">{account.territory || '—'}</td>
-                      <td className="p-4"><span className={`font-medium ${visitStatus.needsAttention ? 'text-red-600' : 'text-gray-600'}`}>{visitStatus.text}</span></td>
-                      <td className="p-4 text-right">
-                        <Link href={`/accounts/${account.id}`} className="text-blue-500 font-medium text-sm hover:underline">View →</Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : <tr><td colSpan={5} className="p-8 text-center text-gray-400">No branches found.</td></tr>
-            ) : (
-              /* --- MAJOR ACCOUNTS ROW WITH ACCORDION --- */
-              majorAccounts.length > 0 ? (
-                majorAccounts.map((account) => {
-                  const isExpanded = expandedParentId === account.id;
-                  // Find all branches that belong to this major account
-                  const childBranches = accounts.filter(a => a.parent_id === account.id);
+        {/* NEW: Account Type Filter */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Account Type</label>
+          <select 
+            value={accountTypeFilter}
+            onChange={(e) => setAccountTypeFilter(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+          >
+            <option value="All">All Accounts</option>
+            <option value="HQ">Main Hubs / HQs Only</option>
+            <option value="Branch">Satellite Branches Only</option>
+          </select>
+        </div>
 
-                  return (
-                    <Fragment key={account.id}>
-                      {/* Parent Row (Clickable) */}
-                      <tr 
-                        onClick={() => toggleRow(account.id)}
-                        className="hover:bg-gray-50 transition-colors cursor-pointer group"
-                      >
-                        <td className="p-4 font-black text-gray-900 text-lg flex items-center gap-3">
-                          <span className="text-gray-400 group-hover:text-blue-600 transition-colors text-sm">
-                            {isExpanded ? '▼' : '▶'}
-                          </span>
-                          {account.name}
-                        </td>
-                        <td className="p-4">
-                          <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-bold">
-                            {childBranches.length} Locations
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${account.status === 'Inactive' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                            {account.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <Link href={`/accounts/${account.id}`} onClick={(e) => e.stopPropagation()} className="text-blue-500 font-medium text-sm hover:underline">
-                            Manage HQ →
-                          </Link>
-                        </td>
-                      </tr>
+        {/* Territory Filter */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Territory</label>
+          <select 
+            value={territoryFilter}
+            onChange={(e) => setTerritoryFilter(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+          >
+            <option value="All">All Territories</option>
+            {TERRITORIES.map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
 
-                      {/* Child Dropdown Row */}
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={4} className="p-0 bg-gray-50 border-t border-gray-100 shadow-inner">
-                            <div className="p-6 pl-12 border-l-4 border-blue-500">
-                              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Attached Branches</h4>
-                              {childBranches.length > 0 ? (
-                                <ul className="space-y-3">
-                                  {childBranches.map(branch => (
-                                    <li key={branch.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                                      <div className="flex items-center gap-3">
-                                        <span className="font-bold text-gray-800">{branch.name}</span>
-                                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">{branch.territory || 'N/A'}</span>
-                                      </div>
-                                      <Link href={`/accounts/${branch.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-bold hover:underline">
-                                        View Branch →
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-sm text-gray-500 italic">No branches have been attached to this account yet.</p>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })
-              ) : <tr><td colSpan={4} className="p-8 text-center text-gray-400">No major accounts found.</td></tr>
-            )}
-
-          </tbody>
-        </table>
+        {/* Salesman Filter */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Salesman</label>
+          <select 
+            value={salesmanFilter}
+            onChange={(e) => setSalesmanFilter(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+          >
+            <option value="All">Entire Team</option>
+            {SALES_TEAM.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {/* Results Grid */}
+      {isLoading ? (
+        <div className="p-12 text-center text-gray-500 font-bold">Loading directory...</div>
+      ) : filteredAccounts.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredAccounts.map(account => (
+            <Link 
+              key={account.id} 
+              href={`/accounts/${account.id}`}
+              className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:border-blue-300 hover:shadow-md transition-all group flex flex-col justify-between h-full"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-xl font-black text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                    {account.name}
+                  </h3>
+                  {account.parent_id && (
+                    <span title="Satellite Branch" className="text-purple-600 bg-purple-50 p-1.5 rounded-lg shrink-0">
+                      🏢
+                    </span>
+                  )}
+                </div>
+                
+                <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex items-start gap-2">
+                  <span className="shrink-0">📍</span> 
+                  {account.address || 'No address provided'}
+                </p>
+
+                {account.assigned_reps && account.assigned_reps.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {account.assigned_reps.map((rep: string) => (
+                      <span key={rep} className="bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold px-2 py-0.5 rounded-md">
+                        {rep}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 mt-auto pt-4 border-t border-gray-100">
+                <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2.5 py-1 rounded">
+                  {account.territory || 'No Territory'}
+                </span>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                  account.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {account.status || 'Active'}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
+          <p className="text-gray-500 font-medium mb-4">No accounts match your current filters.</p>
+          <button 
+            onClick={() => {
+              setSearchTerm('');
+              setTerritoryFilter('All');
+              setSalesmanFilter('All');
+              setAccountTypeFilter('All'); // Clear this one too!
+            }}
+            className="text-blue-600 font-bold hover:underline"
+          >
+            Clear all filters
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import { SALES_TEAM } from '@/lib/constants';
 function NewTaskForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,9 +91,10 @@ function NewTaskForm() {
               onChange={(e) => setRepName(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
             >
-              <option value="" disabled>Who is doing this?</option>
-              <option value="John">John</option>
-              <option value="Alejandro">Alejandro</option>
+             <option value="" disabled>Who is doing this?</option>
+{SALES_TEAM.map(name => (
+  <option key={name} value={name}>{name}</option>
+))}
             </select>
           </div>
         </div>

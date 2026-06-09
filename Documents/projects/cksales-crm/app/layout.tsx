@@ -43,27 +43,70 @@ export default function RootLayout({
           
           {/* SIDEBAR (Hidden on tiny mobile screens, visible on tablets/desktops) */}
           <aside className="w-64 bg-gray-900 text-white flex-shrink-0 overflow-y-auto hidden md:block">
-  <nav className="p-4 space-y-2 mt-4">
-    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-4">Menu</div>
-    <Link href="/" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-      📊 Dashboard
-    </Link>
-    <Link href="/accounts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-      🏢 Accounts
-    </Link>
-    <Link href="/routing" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-      🗺️ Territory Routing
-    </Link>
-    <Link href="/contacts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-      👥 Contacts
-    </Link>
-    <Link href="/tasks" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-      ✅ Tasks
-    </Link>
-    <Link href="/tech-library" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
-      📚 Tech Library
-    </Link>
-  </nav>
+  <nav className="space-y-1.5 px-4">
+  {/* Dashboard */}
+  <Link 
+    href="/" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">📊</span>
+    <span>Dashboard</span>
+  </Link>
+
+  {/* Schedule */}
+  <Link 
+    href="/calendar" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">🗓️</span>
+    <span>Schedule</span>
+  </Link>
+
+  {/* Tasks */}
+  <Link 
+    href="/tasks" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">⚡</span>
+    <span>Tasks</span>
+  </Link>
+
+  {/* Accounts Directory */}
+  <Link 
+    href="/accounts" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">🏢</span>
+    <span>Accounts</span>
+  </Link>
+
+  {/* Log Visit */}
+  <Link 
+    href="/calls/new" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">📍</span>
+    <span>Log Visit</span>
+  </Link>
+
+  {/* Tech Library - RESTORED */}
+  <Link 
+    href="/tech-library" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">📚</span>
+    <span>Tech Library</span>
+  </Link>
+
+  {/* Generate Report */}
+  <Link 
+    href="/calls/new/report" 
+    className="flex items-center gap-3 px-4 py-3 text-gray-100 font-bold rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+  >
+    <span className="w-6 text-center text-lg">📋</span>
+    <span>Generate Report</span>
+  </Link>
+</nav>
 </aside>
 
           {/* SCROLLABLE PAGE CONTENT */}

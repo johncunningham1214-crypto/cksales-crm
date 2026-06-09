@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
+import { TERRITORIES } from '@/lib/constants';
 
 export default function TerritoryRouting() {
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -10,12 +11,7 @@ export default function TerritoryRouting() {
   const [routeList, setRouteList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Define our core territory markets
-  // East Coast territory filters
-  const territories = [
-    'All', 'ME', 'NH', 'VT', 'MA', 'RI', 'CT', 'NY', 'NJ', 'PA', 
-    'DE', 'MD', 'DC', 'VA', 'NC', 'SC', 'GA', 'FL'
-  ];
+ 
 
   useEffect(() => {
     async function fetchAccounts() {
@@ -100,7 +96,7 @@ export default function TerritoryRouting() {
 
       {/* Territory Filter Buttons */}
       <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
-        {territories.map((t) => (
+        {['All', ...TERRITORIES].map((t) => (
           <button
             key={t}
             onClick={() => setSelectedTerritory(t)}

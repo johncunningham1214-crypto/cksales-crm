@@ -2,42 +2,58 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { SALES_TEAM, VENDORS } from '@/lib/constants'; 
+import { useRouter, useParams } from 'next/navigation';
+import { SALES_TEAM, VENDORS } from '@/lib/constants';
 
-export default function LogCall() {
+export default function EditCall() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const preselectedAccountId = searchParams.get('accountId');
+  const params = useParams();
+  const callId = params.id as string;
 
   const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   // Form State
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState('');
   const [repName, setRepName] = useState('');
-  const [accountId, setAccountId] = useState(preselectedAccountId || '');
+  const [accountId, setAccountId] = useState('');
   const [type, setType] = useState('Field Visit');
   const [notes, setNotes] = useState('');
-  const [selectedVendors, setSelectedVendors] = useState<string[]>([]); // NEW: Track tagged vendors
+  const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
 
   useEffect(() => {
-    async function fetchAccounts() {
-      const { data } = await supabase
+    async function fetchData() {
+      // 1. Fetch Accounts for the dropdown
+      const { data: accountsData } = await supabase
         .from('accounts')
         .select('id, name')
-        .eq('status', 'Active')
         .order('name');
         
-      if (data) setAccounts(data);
+      if (accountsData) setAccounts(accountsData);
+
+      // 2. Fetch the specific call we are editing
+      const { data: callData } = await supabase
+        .from('calls')
+        .select('*')
+        .eq('id', callId)
+        .single();
+
+      if (callData) {
+        setDate(callData.date || '');
+        setRepName(callData.rep_name || '');
+        setAccountId(callData.account_id || '');
+        setType(callData.type || 'Field Visit');
+        setNotes(callData.notes || '');
+        setSelectedVendors(callData.vendors || []);
+      }
+      
       setIsLoading(false);
     }
-    fetchAccounts();
-  }, []);
+    
+    if (callId) fetchData();
+  }, [callId]);
 
-  // NEW: Handle vendor checkbox toggles
   const toggleVendor = (vendor: string) => {
     setSelectedVendors(prev => 
       prev.includes(vendor) 
@@ -46,50 +62,62 @@ export default function LogCall() {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
     const { error } = await supabase
       .from('calls')
-      .insert([{
+      .update({
         date,
         rep_name: repName,
         account_id: accountId === "" ? null : accountId,
         type,
         notes,
-        vendors: selectedVendors // NEW: Save the tags to the database
-      }]);
+        vendors: selectedVendors
+      })
+      .eq('id', callId);
 
     if (error) {
-      console.error("Error logging call:", error);
-      alert("Failed to log visit: " + error.message);
+      console.error("Error updating call:", error);
+      alert("Failed to update visit: " + error.message);
       setIsSaving(false);
     } else {
-      // If we came from an account profile, send them back there. Otherwise, go to dashboard.
-      if (preselectedAccountId) {
-        router.push(`/accounts/${preselectedAccountId}`);
-      } else {
-        router.push('/');
-      }
+      // Send them back to the previous page
+      router.back();
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading accounts...</div>;
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this visit record? This cannot be undone.")) return;
+    
+    const { error } = await supabase.from('calls').delete().eq('id', callId);
+    if (error) {
+      alert("Failed to delete: " + error.message);
+    } else {
+      router.push('/'); // Send to dashboard on delete
+    }
+  };
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading visit details...</div>;
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-black text-gray-900">Log Field Visit</h1>
-        <button onClick={() => router.back()} className="text-blue-600 font-bold hover:underline">
-          Cancel
-        </button>
+        <h1 className="text-3xl font-black text-gray-900">Edit Field Visit</h1>
+        <div className="flex items-center gap-4">
+          <button onClick={handleDelete} className="text-red-600 font-bold hover:text-red-800 text-sm">
+            Delete Call
+          </button>
+          <button onClick={() => router.back()} className="text-blue-600 font-bold hover:underline">
+            Cancel
+          </button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
+      <form onSubmit={handleUpdate} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Date */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Date of Visit *</label>
             <input 
@@ -101,7 +129,6 @@ export default function LogCall() {
             />
           </div>
 
-          {/* Rep Name */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Salesman *</label>
             <select 
@@ -118,7 +145,6 @@ export default function LogCall() {
           </div>
         </div>
 
-        {/* Account Location */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Account / Branch Location *</label>
           <select 
@@ -134,7 +160,6 @@ export default function LogCall() {
           </select>
         </div>
 
-        {/* Visit Type */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Type of Visit *</label>
           <select 
@@ -152,7 +177,6 @@ export default function LogCall() {
           </select>
         </div>
 
-        {/* NEW: Vendor Tags Grid */}
         <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
           <label className="block text-sm font-bold text-gray-900 mb-3">Vendors Discussed / Pitched</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -170,7 +194,6 @@ export default function LogCall() {
           </div>
         </div>
 
-        {/* Notes */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Visit Notes & Action Items</label>
           <textarea 
@@ -182,14 +205,13 @@ export default function LogCall() {
           ></textarea>
         </div>
 
-        {/* Submit Button */}
         <div className="pt-4 border-t border-gray-100">
           <button 
             type="submit"
             disabled={isSaving}
             className="w-full bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {isSaving ? 'Logging Visit...' : 'Log Field Visit'}
+            {isSaving ? 'Updating Visit...' : 'Save Updates'}
           </button>
         </div>
       </form>
