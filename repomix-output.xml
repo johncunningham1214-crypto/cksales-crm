@@ -1,0 +1,3853 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  accounts/
+    [id]/
+      edit/
+        page.tsx
+      page.tsx
+    new/
+      page.tsx
+    page.tsx
+  calendar/
+    page.tsx
+  calls/
+    new/
+      page.tsx
+  components/
+    GlobalSearch.tsx
+  contacts/
+    [id]/
+      edit/
+        page.tsx
+      page.tsx
+    new/
+      page.tsx
+    page.tsx
+  routing/
+    page.tsx
+  tasks/
+    new/
+      page.tsx
+    page.tsx
+  tech-library/
+    [id]/
+      page.tsx
+    upload/
+      page.tsx
+    page.tsx
+  favicon.ico
+  globals.css
+  layout.tsx
+  page.tsx
+lib/
+  constants.ts
+  supabase.ts
+public/
+  file.svg
+  globe.svg
+  icon.png
+  manifest.json
+  next.svg
+  vercel.svg
+  window.svg
+.gitignore
+AGENTS.md
+CLAUDE.md
+eslint.config.mjs
+next.config.ts
+package.json
+postcss.config.mjs
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/accounts/[id]/edit/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../../lib/supabase';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
+
+export default function EditAccountForm() {
+  const router = useRouter();
+  const params = useParams();
+  const accountId = params.id;
+
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [territory, setTerritory] = useState('');
+  const [status, setStatus] = useState('Active');
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // The East Coast territories we defined earlier
+  const territories = [
+    'ME', 'NH', 'VT', 'MA', 'RI', 'CT', 'NY', 'NJ', 'PA', 
+    'DE', 'MD', 'DC', 'VA', 'NC', 'SC', 'GA', 'FL'
+  ];
+
+  // 1. Fetch the existing account data to pre-fill the form
+  useEffect(() => {
+    async function fetchAccountData() {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('id', accountId)
+        .single();
+
+      if (data) {
+        setName(data.name || '');
+        setAddress(data.address || '');
+        setPhone(data.phone || '');
+        setTerritory(data.territory || '');
+        setStatus(data.status || 'Active');
+      } else if (error) {
+        console.error("Error fetching account:", error);
+      }
+      setIsLoading(false);
+    }
+
+    if (accountId) fetchAccountData();
+  }, [accountId]);
+
+  // 2. Save the updated data back to Supabase
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from('accounts')
+      .update({ 
+        name, 
+        address, 
+        phone, 
+        territory, 
+        status 
+      })
+      .eq('id', accountId);
+
+    if (error) {
+      console.error("Error updating account:", error);
+      alert("Failed to update account: " + error.message);
+      setIsSubmitting(false);
+    } else {
+      // Success! Send them back to the account profile
+      router.push(`/accounts/${accountId}`);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading account data...</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-3xl mx-auto">
+      <Link href={`/accounts/${accountId}`} className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block">
+        ← Back to Account Profile
+      </Link>
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900">Edit Account Details</h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          
+          {/* Branch Name */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Branch Name</label>
+            <input 
+              type="text" 
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              placeholder="e.g. Johnstone Supply - Hackensack"
+            />
+          </div>
+
+          {/* Address & Phone Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Address</label>
+              <input 
+                type="text" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+                placeholder="123 Main St, City, ST 12345"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
+              <input 
+                type="text" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+                placeholder="(555) 123-4567"
+              />
+            </div>
+          </div>
+
+          {/* Territory & Status Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Territory</label>
+              <select 
+                value={territory}
+                onChange={(e) => setTerritory(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+              >
+                <option value="" disabled>Select a territory...</option>
+                {territories.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
+              <select 
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-4 flex items-center justify-end gap-4 border-t border-gray-100">
+            <button 
+              type="button"
+              onClick={() => router.back()}
+              className="text-gray-500 font-bold hover:text-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/accounts/[id]/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+
+export default function AccountProfile() {
+  const params = useParams();
+  const accountId = params.id;
+
+  const [account, setAccount] = useState<any>(null);
+  const [calls, setCalls] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]); 
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]); // NEW: State for events
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchAccountData() {
+      // Get today's date for filtering upcoming events
+      const today = new Date().toISOString().split('T')[0];
+
+      // Fire all 5 database requests simultaneously for max speed
+      const [accountRes, contactsRes, callsRes, tasksRes, eventsRes] = await Promise.all([
+        supabase.from('accounts').select('*').eq('id', accountId).single(),
+        supabase.from('contacts').select('*').eq('account_id', accountId).order('name'),
+        supabase.from('calls').select('id, date, type, notes, rep_name').eq('account_id', accountId).order('date', { ascending: false }),
+        supabase.from('tasks').select('*').eq('account_id', accountId).order('due_date', { ascending: true }),
+        supabase.from('events').select('*').eq('account_id', accountId).gte('event_date', today).order('event_date', { ascending: true }) // NEW: Fetch events
+      ]);
+
+      if (accountRes.data) setAccount(accountRes.data);
+      if (contactsRes.data) setContacts(contactsRes.data);
+      if (callsRes.data) setCalls(callsRes.data);
+      if (tasksRes.data) setTasks(tasksRes.data);
+      if (eventsRes.data) setUpcomingEvents(eventsRes.data); // NEW: Set events
+      
+      setIsLoading(false);
+    }
+
+    if (accountId) fetchAccountData();
+  }, [accountId]);
+
+  // THE SAFETY NETS
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading branch profile...</div>;
+  }
+
+  if (!account) {
+    return <div className="p-8 text-center text-red-500">Account not found.</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      {/* Navigation Breadcrumb */}
+      <Link href="/accounts" className="text-blue-600 hover:underline font-medium text-sm">
+        ← Back to Accounts
+      </Link>
+
+      {/* Account Header */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900">{account.name}</h1>
+          <div className="mt-3 space-y-1 text-gray-600 font-medium text-sm">
+            <p className="flex items-center gap-2">
+              <span>📍</span> {account.address || 'No address on file'}
+            </p>
+            <p className="flex items-center gap-2">
+              <span>📞</span> {account.phone || 'No phone number on file'}
+            </p>
+          </div>
+          <div className="flex gap-2 mt-5">
+            <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2.5 py-1 rounded">
+              {account.territory || 'Unassigned Territory'}
+            </span>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+              account.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {account.status || 'Active'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+          <Link 
+            href={`/accounts/${account.id}/edit`}
+            className="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm text-center"
+          >
+            ✏️ Edit Account
+          </Link>
+          <Link 
+            href={`/calls/new?accountId=${account.id}`}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm text-center"
+          >
+            + Log Visit
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* LEFT COLUMN: Contacts */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">Branch Contacts</h2>
+              <Link 
+                href={`/contacts/new?accountId=${account.id}`}
+                className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-3 py-1.5 rounded-lg"
+              >
+                + Add
+              </Link>
+            </div>
+            
+            <div className="divide-y divide-gray-100">
+              {contacts.length > 0 ? (
+                contacts.map(contact => (
+                  <div key={contact.id} className="p-6 hover:bg-gray-50 transition-colors">
+                    <Link href={`/contacts/${contact.id}/edit`} className="group flex items-center gap-2 mb-0.5">
+                      <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {contact.name}
+                      </h3>
+                      <span className="opacity-0 group-hover:opacity-100 text-xs font-bold text-blue-600 transition-opacity">
+                        ✎ Edit
+                      </span>
+                    </Link>
+                    <p className="text-sm text-gray-500 font-medium mb-3">{contact.title || 'Staff'}</p>
+                    
+                    <div className="text-sm text-gray-600 space-y-1.5">
+                      {contact.phone && (
+                        <a href={`tel:${contact.phone}`} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                          <span>📞</span> {contact.phone}
+                        </a>
+                      )}
+                      {contact.email && (
+                        <a href={`mailto:${contact.email}`} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                          <span>✉️</span> {contact.email}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  No contacts listed for this branch.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Events, Tasks & Activity Stack */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* NEW: TOP OF STACK - Upcoming Visits */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">Upcoming Visits</h2>
+              <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
+                {upcomingEvents.length} Scheduled
+              </span>
+            </div>
+
+            {upcomingEvents.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {upcomingEvents.map(event => {
+                  const [year, month, day] = event.event_date.split('-');
+                  const formattedDate = new Date(Number(year), Number(month) - 1, Number(day))
+                    .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                  return (
+                    <div key={event.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col md:flex-row gap-4 items-start md:items-center">
+                      <div className="md:w-32 shrink-0">
+                        <span className="text-sm font-bold text-blue-600 uppercase tracking-wider">
+                          {formattedDate}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-bold text-gray-900">{event.title}</h3>
+                          {event.salesman && (
+                            <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200">
+                              {event.salesman}
+                            </span>
+                          )}
+                        </div>
+                        {event.description && (
+                          <p className="text-gray-500 text-sm mt-1">{event.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-gray-500 text-sm">
+                No upcoming visits scheduled for this branch. Check the <Link href="/calendar" className="text-blue-600 hover:underline">calendar</Link> to add one.
+              </div>
+            )}
+          </div>
+
+          {/* MIDDLE OF STACK: Branch Tasks */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">Open Tasks</h2>
+              <Link 
+                href={`/tasks/new?accountId=${account.id}`}
+                className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-3 py-1.5 rounded-lg"
+              >
+                + Add Task
+              </Link>
+            </div>
+            
+            <div className="divide-y divide-gray-100">
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
+                  <div key={task.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <h3 className="font-bold text-gray-900">{task.title}</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Due: <span className="font-medium text-gray-700">{task.due_date || 'No date set'}</span> 
+                        {task.rep_name && ` • Assigned to: ${task.rep_name}`}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full shrink-0 ${
+                      task.status?.toLowerCase() === 'completed' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {task.status || 'Pending'}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  No open tasks for this branch. You're all caught up!
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* BOTTOM OF STACK: Branch History */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-lg font-bold text-gray-900">Branch History</h2>
+            </div>
+            
+            <div className="divide-y divide-gray-100">
+              {calls.length > 0 ? (
+                calls.map((call) => (
+                  <div key={call.id} className="p-6 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+                          {call.rep_name ? call.rep_name.charAt(0) : '?'}
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-900 font-medium">
+                            <span className="font-bold">{call.rep_name || 'A team member'}</span> logged a <span className="font-bold">{call.type}</span>
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">{call.date}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-3 pl-11 bg-white p-3 border border-gray-100 rounded-lg italic">
+                      "{call.notes}"
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  No activity logged for this branch yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/accounts/new/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+export default function NewAccount() {
+  const router = useRouter();
+  
+  // Basic Info
+  const [name, setName] = useState('');
+  const [territory, setTerritory] = useState('');
+  const [phone, setPhone] = useState('');
+  const [status, setStatus] = useState('Active');
+  
+  // Hierarchy Info
+  const [isParent, setIsParent] = useState(false);
+  const [parentId, setParentId] = useState('');
+  
+  // List of Major Accounts for the dropdown
+  const [majorAccounts, setMajorAccounts] = useState<any[]>([]);
+
+  // Fetch only the Major Accounts to populate our dropdown
+  useEffect(() => {
+    async function fetchParents() {
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name')
+        .eq('is_parent', true)
+        .order('name');
+      
+      if (data) setMajorAccounts(data);
+    }
+    fetchParents();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const { error } = await supabase
+      .from('accounts')
+      .insert([
+        { 
+          name, 
+          territory, 
+          phone, 
+          status,
+          is_parent: isParent,
+          // If it is a parent, it can't have a parent. If a parent is selected, save it.
+          parent_id: isParent ? null : (parentId || null) 
+        }
+      ]);
+
+    if (error) {
+      console.error("Error adding account:", error.message);
+      alert("Failed to add account.");
+    } else {
+      router.push('/accounts');
+      router.refresh();
+    }
+  };
+
+  return (
+    <div className="p-8 max-w-2xl mx-auto">
+      <div className="mb-8">
+        <Link href="/accounts" className="text-blue-600 hover:underline font-medium text-sm">
+          ← Back to Accounts
+        </Link>
+        <h1 className="text-3xl font-black text-gray-900 mt-4">New Account</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
+        
+        {/* --- HIERARCHY TOGGLE --- */}
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6">
+          <label className="flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={isParent}
+              onChange={(e) => {
+                setIsParent(e.target.checked);
+                if (e.target.checked) setParentId(''); // Clear parent selection if they make THIS a parent
+              }}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+            />
+            <span className="ml-3 font-bold text-blue-900">
+              This is a Major Parent Account (e.g., Johnstone Supply, URI)
+            </span>
+          </label>
+          <p className="ml-8 mt-1 text-sm text-blue-700">
+            Check this box if this is the main corporate entity. Leave it unchecked if this is a specific branch location.
+          </p>
+        </div>
+
+        {/* --- PARENT DROPDOWN (Hides if this IS a parent) --- */}
+        {!isParent && (
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Belongs to Major Account (Optional)</label>
+            <select 
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-3 bg-white"
+            >
+              <option value="">-- Standalone Account (No Parent) --</option>
+              {majorAccounts.map(parent => (
+                <option key={parent.id} value={parent.id}>{parent.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* --- STANDARD FIELDS --- */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            {isParent ? 'Company Name *' : 'Branch Name * (e.g., Johnstone - Newburgh)'}
+          </label>
+          <input 
+            type="text" 
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">State / Territory</label>
+            <input 
+              type="text" 
+              value={territory}
+              onChange={(e) => setTerritory(e.target.value.toUpperCase())} 
+              placeholder="e.g. NY, NJ"
+              maxLength={2}
+              className="w-full border border-gray-300 rounded-lg p-3"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Phone</label>
+            <input 
+              type="tel" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-3"
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 flex justify-end">
+          <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-sm">
+            Save {isParent ? 'Parent Account' : 'Branch'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+</file>
+
+<file path="app/accounts/page.tsx">
+"use client";
+
+import React, { useState, useEffect, Fragment } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+
+export default function AccountsPage() {
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('Branches'); // 'Branches' or 'Major'
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // NEW: State to track which Major Account row is expanded
+  const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
+
+  const eastCoastStates = [
+    'All', 'ME', 'NH', 'VT', 'MA', 'RI', 'CT', 'NY', 'NJ', 
+    'PA', 'DE', 'MD', 'VA', 'NC', 'SC', 'GA', 'FL'
+  ];
+
+  useEffect(() => {
+    async function fetchAccounts() {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select(`
+          *,
+          calls ( date )
+        `)
+        .order('name');
+
+      if (data) {
+        setAccounts(data);
+      } else if (error) {
+        console.error("Error fetching accounts:", error);
+      }
+      setIsLoading(false);
+    }
+
+    fetchAccounts();
+  }, []);
+
+  const searchedAndFiltered = accounts.filter(account => {
+    const matchesState = activeFilter === 'All' || account.territory === activeFilter;
+    const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesState && matchesSearch;
+  });
+
+  const majorAccounts = searchedAndFiltered.filter(a => a.is_parent);
+  const branchAccounts = searchedAndFiltered.filter(a => !a.is_parent);
+
+  const getParentName = (parentId: string) => {
+    if (!parentId) return '—';
+    const parent = accounts.find(a => a.id === parentId);
+    return parent ? parent.name : '—';
+  };
+
+  const getBranchCount = (parentId: string) => {
+    return accounts.filter(a => a.parent_id === parentId).length;
+  };
+
+  const getVisitStatus = (calls: any[]) => {
+    if (!calls || calls.length === 0) return { text: 'Never Visited', needsAttention: true };
+    const sortedCalls = calls.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const lastVisitDate = new Date(sortedCalls[0].date);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    return { 
+      text: lastVisitDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
+      needsAttention: lastVisitDate < sixtyDaysAgo 
+    };
+  };
+
+  // NEW: Function to toggle the dropdown
+  const toggleRow = (id: string) => {
+    if (expandedParentId === id) {
+      setExpandedParentId(null); // Close it if it's already open
+    } else {
+      setExpandedParentId(id); // Open the clicked one
+    }
+  };
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-black text-gray-900">Accounts</h1>
+        <Link href="/accounts/new">
+          <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 shadow-sm">
+            + New Account
+          </button>
+        </Link>
+      </div>
+
+      <div className="flex space-x-4 mb-6 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('Branches')}
+          className={`pb-4 px-2 text-lg font-bold border-b-4 transition-colors ${
+            activeTab === 'Branches' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          All Branches
+        </button>
+        <button
+          onClick={() => setActiveTab('Major')}
+          className={`pb-4 px-2 text-lg font-bold border-b-4 transition-colors ${
+            activeTab === 'Major' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Major Accounts HQ
+        </button>
+      </div>
+
+      <div className="relative mb-6">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <span className="text-gray-400">🔍</span>
+        </div>
+        <input
+          type="text"
+          placeholder="Search accounts by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:border-blue-500 text-lg"
+        />
+      </div>
+
+      {activeTab === 'Branches' && (
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2">
+            {eastCoastStates.map((state) => (
+              <button
+                key={state}
+                onClick={() => setActiveFilter(state)}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                  activeFilter === state 
+                    ? 'bg-gray-900 text-white shadow-md' 
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-900 hover:text-gray-900'
+                }`}
+              >
+                {state}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            {activeTab === 'Branches' ? (
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Branch Name</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Parent Company</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">State</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Last Visit</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase text-right">Action</th>
+              </tr>
+            ) : (
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Major Account</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Total Branches</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase">Status</th>
+                <th className="p-4 text-sm font-bold text-gray-500 uppercase text-right">Action</th>
+              </tr>
+            )}
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            
+            {isLoading ? (
+              <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">Loading accounts...</td></tr>
+            ) : activeTab === 'Branches' ? (
+              /* --- BRANCHES ROW --- */
+              branchAccounts.length > 0 ? (
+                branchAccounts.map((account) => {
+                  const visitStatus = getVisitStatus(account.calls);
+                  return (
+                    <tr key={account.id} className={`transition-colors group ${visitStatus.needsAttention ? 'hover:bg-orange-50/50' : 'hover:bg-gray-50'}`}>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          {visitStatus.needsAttention && <span title="Needs Follow-up" className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>}
+                          <Link href={`/accounts/${account.id}`} className="font-bold text-gray-900 group-hover:text-blue-600">
+                            {account.name}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="p-4 text-gray-600 font-medium">
+                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-100">
+                          {getParentName(account.parent_id)}
+                        </span>
+                      </td>
+                      <td className="p-4 text-gray-600 font-medium">{account.territory || '—'}</td>
+                      <td className="p-4"><span className={`font-medium ${visitStatus.needsAttention ? 'text-red-600' : 'text-gray-600'}`}>{visitStatus.text}</span></td>
+                      <td className="p-4 text-right">
+                        <Link href={`/accounts/${account.id}`} className="text-blue-500 font-medium text-sm hover:underline">View →</Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : <tr><td colSpan={5} className="p-8 text-center text-gray-400">No branches found.</td></tr>
+            ) : (
+              /* --- MAJOR ACCOUNTS ROW WITH ACCORDION --- */
+              majorAccounts.length > 0 ? (
+                majorAccounts.map((account) => {
+                  const isExpanded = expandedParentId === account.id;
+                  // Find all branches that belong to this major account
+                  const childBranches = accounts.filter(a => a.parent_id === account.id);
+
+                  return (
+                    <Fragment key={account.id}>
+                      {/* Parent Row (Clickable) */}
+                      <tr 
+                        onClick={() => toggleRow(account.id)}
+                        className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                      >
+                        <td className="p-4 font-black text-gray-900 text-lg flex items-center gap-3">
+                          <span className="text-gray-400 group-hover:text-blue-600 transition-colors text-sm">
+                            {isExpanded ? '▼' : '▶'}
+                          </span>
+                          {account.name}
+                        </td>
+                        <td className="p-4">
+                          <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-bold">
+                            {childBranches.length} Locations
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${account.status === 'Inactive' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                            {account.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <Link href={`/accounts/${account.id}`} onClick={(e) => e.stopPropagation()} className="text-blue-500 font-medium text-sm hover:underline">
+                            Manage HQ →
+                          </Link>
+                        </td>
+                      </tr>
+
+                      {/* Child Dropdown Row */}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={4} className="p-0 bg-gray-50 border-t border-gray-100 shadow-inner">
+                            <div className="p-6 pl-12 border-l-4 border-blue-500">
+                              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Attached Branches</h4>
+                              {childBranches.length > 0 ? (
+                                <ul className="space-y-3">
+                                  {childBranches.map(branch => (
+                                    <li key={branch.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-bold text-gray-800">{branch.name}</span>
+                                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">{branch.territory || 'N/A'}</span>
+                                      </div>
+                                      <Link href={`/accounts/${branch.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-bold hover:underline">
+                                        View Branch →
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">No branches have been attached to this account yet.</p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })
+              ) : <tr><td colSpan={4} className="p-8 text-center text-gray-400">No major accounts found.</td></tr>
+            )}
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/calendar/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+import { SALES_TEAM } from '@/lib/constants';
+
+export default function Calendar() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Form State
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null); // NEW: Tracks which event we are editing
+  const [title, setTitle] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [description, setDescription] = useState('');
+  const [salesman, setSalesman] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  async function fetchData() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Fetch Accounts for the dropdown
+    const { data: accountsData } = await supabase
+      .from('accounts')
+      .select('id, name')
+      .order('name');
+      
+    if (accountsData) setAccounts(accountsData);
+
+    // Fetch Events (including past events if you want to edit them, but currently filtered to today onward)
+    const { data: eventsData, error: eventsError } = await supabase
+      .from('events')
+      .select('*, accounts(name)')
+      .gte('event_date', today)
+      .order('event_date', { ascending: true });
+    
+    if (eventsData) setEvents(eventsData);
+    if (eventsError) console.error("Error fetching events:", eventsError);
+    
+    setIsLoading(false);
+  }
+
+  // NEW: Reset form completely when closing or after saving
+  const resetForm = () => {
+    setTitle('');
+    setEventDate('');
+    setAccountId('');
+    setDescription('');
+    setSalesman('');
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  // NEW: Populate form with existing event data
+  const handleEditClick = (event: any) => {
+    setTitle(event.title);
+    setEventDate(event.event_date);
+    setAccountId(event.account_id ? event.account_id : '');
+    setDescription(event.description || '');
+    setSalesman(event.salesman || '');
+    setEditingId(event.id);
+    setIsAdding(true);
+  };
+
+  // NEW: Delete an event
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this event? This cannot be undone.")) return;
+    
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    
+    if (error) {
+      alert("Failed to delete: " + error.message);
+    } else {
+      resetForm();
+      fetchData();
+    }
+  };
+
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !eventDate) return;
+    
+    setIsSubmitting(true);
+
+    const eventPayload = {
+      title: title.trim(), 
+      event_date: eventDate,
+      description: description.trim(),
+      salesman: salesman === "Unassigned" ? null : salesman,
+      account_id: accountId ? accountId : null
+    };
+
+    let error;
+
+    // If we have an editingId, UPDATE the existing row. Otherwise, INSERT a new one.
+    if (editingId) {
+      const res = await supabase.from('events').update(eventPayload).eq('id', editingId);
+      error = res.error;
+    } else {
+      const res = await supabase.from('events').insert([eventPayload]);
+      error = res.error;
+    }
+
+    if (error) {
+      console.error("Error saving event:", error);
+      alert("Failed to save event: " + error.message);
+    } else {
+      resetForm();
+      fetchData();
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    const [year, month, day] = dateString.split('-');
+    return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', options);
+  };
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading schedule...</div>;
+
+  return (
+    <div className="p-8 max-w-5xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Schedule</h1>
+          <p className="text-gray-500 mt-2 font-medium">Upcoming meetings and field visits.</p>
+        </div>
+        <button 
+          onClick={() => isAdding ? resetForm() : setIsAdding(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          {isAdding ? 'Cancel' : '+ New Event'}
+        </button>
+      </div>
+
+      {/* Add / Edit Event Form */}
+      {isAdding && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top-2 fade-in duration-200">
+          
+          <div className="mb-4 pb-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-gray-900">
+              {editingId ? 'Edit Event' : 'Schedule New Event'}
+            </h2>
+            {editingId && (
+              <button 
+                type="button"
+                onClick={() => handleDelete(editingId)}
+                className="text-red-600 hover:text-red-800 text-sm font-bold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors"
+              >
+                Delete Event
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleSaveEvent} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Event Title</label>
+                <input 
+                  type="text" 
+                  required
+                  autoFocus
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Lunch meeting, Product Training..."
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Assigned To</label>
+                <select 
+                  required
+                  value={salesman}
+                  onChange={(e) => setSalesman(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+                >
+                  <option value="" disabled>Select rep...</option>
+<option value="Unassigned">Unassigned</option>
+<option value="My Schedule">My Schedule</option>
+{SALES_TEAM.map(name => (
+  <option key={name} value={name}>{name}</option>
+))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>
+                <input 
+                  type="date" 
+                  required
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Branch Location (Optional)</label>
+                <select 
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+                >
+                  <option value="">-- No specific branch / Internal --</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Event Notes</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g., Reviewing the new boiler specs with the branch manager..."
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none resize-y"
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-gray-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? 'Saving...' : (editingId ? 'Update Event' : 'Save Event')}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Events Agenda List */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {events.length > 0 ? (
+          <div className="divide-y divide-gray-100">
+            {events.map(event => (
+              <div key={event.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col md:flex-row gap-4 items-start md:items-center group">
+                
+                {/* Date Block */}
+                <div className="md:w-48 shrink-0 flex flex-col">
+                  <span className="text-sm font-bold text-blue-600 uppercase tracking-wider">
+                    {formatDate(event.event_date)}
+                  </span>
+                </div>
+                
+                {/* Event Details */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-lg font-bold text-gray-900">{event.title}</h3>
+                    
+                    {event.salesman && (
+                      <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200">
+                        {event.salesman}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {event.accounts && (
+                    <div className="text-blue-700 font-semibold text-sm mt-1 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      {event.accounts.name}
+                    </div>
+                  )}
+
+                  {event.description && (
+                    <p className="text-gray-500 text-sm mt-1">{event.description}</p>
+                  )}
+                </div>
+
+                {/* NEW: Edit Button */}
+                <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleEditClick(event)}
+                    className="text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center text-gray-500">
+            No upcoming events. Your schedule is clear!
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/calls/new/page.tsx">
+"use client";
+
+import { useState, useEffect, Suspense } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { SALES_TEAM, VISIT_TYPES } from '@/lib/constants';
+import Link from 'next/link';
+
+function LogVisitForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preSelectedAccountId = searchParams.get('accountId');
+
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountId, setAccountId] = useState(preSelectedAccountId || '');
+  const [repName, setRepName] = useState(''); // NEW: Tracks the rep's name
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [type, setType] = useState('Branch Visit');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchAccounts() {
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name, territory')
+        .order('name');
+      
+      if (data) setAccounts(data);
+    }
+    fetchAccounts();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountId) return alert("Please select an account.");
+    if (!repName) return alert("Please select your name.");
+    
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from('calls')
+      .insert([{ 
+        account_id: accountId, 
+        rep_name: repName, // NEW: Saves the rep's name to the database
+        date, 
+        type, 
+        notes 
+      }]);
+
+    if (error) {
+      console.error("Error saving visit:", error);
+      alert("Failed to save visit: " + error.message);
+      setIsSubmitting(false);
+    } else {
+      router.push(`/accounts/${accountId}`);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-8 py-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-900">Log Field Activity</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* NEW: Rep Selector */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Team Member</label>
+            <select 
+              required
+              value={repName}
+              onChange={(e) => setRepName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+             <option value="" disabled>Who is logging this?</option>
+            {SALES_TEAM.map(name => (
+            <option key={name} value={name}>{name}</option>
+   ))}
+            </select>
+          </div>
+
+          {/* Account Selection */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Account / Branch</label>
+            <select 
+              required
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+              <option value="" disabled>Select an account...</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} {acc.territory ? `(${acc.territory})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Date Picker */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>
+            <input 
+              type="date" 
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+            />
+          </div>
+
+          {/* Activity Type */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Activity Type</label>
+            <select 
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+              {VISIT_TYPES.map(type => (
+  <option key={type} value={type}>{type}</option>
+))}
+            </select>
+          </div>
+        </div>
+
+        {/* Field Notes */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Field Notes</label>
+          <textarea 
+            required
+            rows={5}
+            placeholder="Who did you speak with? What was discussed? Any follow-up needed?"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none resize-none"
+          ></textarea>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-4 flex items-center justify-end gap-4 border-t border-gray-100">
+          <button 
+            type="button"
+            onClick={() => router.back()}
+            className="text-gray-500 font-bold hover:text-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Visit'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default function LogVisitPage() {
+  return (
+    <div className="p-8 max-w-6xl mx-auto">
+      <Link href="/" className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block">
+        ← Back to Dashboard
+      </Link>
+      <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading form...</div>}>
+        <LogVisitForm />
+      </Suspense>
+    </div>
+  );
+}
+</file>
+
+<file path="app/components/GlobalSearch.tsx">
+"use client";
+
+import { useState, useEffect, useRef } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+
+export default function GlobalSearch() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close the dropdown if you click anywhere else on the screen
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // The actual search engine
+  useEffect(() => {
+    async function performSearch() {
+      // Don't search until we have at least 2 characters
+      if (query.length < 2) {
+        setResults([]);
+        return;
+      }
+
+      // 1. Search Accounts by Name
+      const { data: accounts } = await supabase
+        .from('accounts')
+        .select('id, name')
+        .ilike('name', `%${query}%`)
+        .limit(3);
+
+      // 2. Search Contacts by Name
+      const { data: contacts } = await supabase
+        .from('contacts')
+        .select('id, name, title, account_id, accounts(name)')
+        .ilike('name', `%${query}%`)
+        .limit(3);
+
+      const combinedResults = [];
+
+      // Format Account results
+      if (accounts) {
+        accounts.forEach(acc => {
+          combinedResults.push({
+            id: `acc-${acc.id}`,
+            type: 'Account',
+            name: acc.name,
+            subtext: 'Branch',
+            link: `/accounts/${acc.id}`
+          });
+        });
+      }
+
+      // Format Contact results
+      if (contacts) {
+        contacts.forEach(contact => {
+          combinedResults.push({
+            id: `con-${contact.id}`,
+            type: 'Contact',
+            name: contact.name,
+            subtext: `${contact.title || 'Staff'} @ ${contact.accounts?.name || 'Unknown Branch'}`,
+            link: `/accounts/${contact.account_id}` // Links straight to the branch they belong to
+          });
+        });
+      }
+
+      setResults(combinedResults);
+      setIsOpen(true);
+    }
+
+    // "Debounce" the search so it doesn't slam the database on every single keystroke
+    const debounceTimer = setTimeout(performSearch, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
+
+  return (
+    <div className="relative w-full max-w-md z-50" ref={searchRef}>
+      <div className="relative">
+        <input
+          type="text"
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm"
+          placeholder="Quick search accounts & contacts..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query.length >= 2 && setIsOpen(true)}
+        />
+        <div className="absolute left-3 top-2.5 text-gray-400">
+          {/* Magnifying Glass Icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* The Dropdown Menu */}
+      {isOpen && results.length > 0 && (
+        <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="divide-y divide-gray-100">
+            {results.map((item) => (
+              <Link 
+                href={item.link} 
+                key={item.id}
+                onClick={() => { setQuery(''); setIsOpen(false); }} // Clear search on click
+              >
+                <div className="p-3 hover:bg-gray-50 transition-colors block cursor-pointer">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-bold text-gray-900">{item.name}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                      item.type === 'Account' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                    }`}>
+                      {item.type}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">{item.subtext}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No Results Message */}
+      {isOpen && query.length >= 2 && results.length === 0 && (
+        <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4 text-center text-gray-500 text-sm">
+          No matches found for "{query}"
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="app/contacts/[id]/edit/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../../lib/supabase';
+import { useRouter, useParams } from 'next/navigation';
+
+export default function EditContactForm() {
+  const router = useRouter();
+  const params = useParams();
+  const contactId = params.id;
+
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountId, setAccountId] = useState('');
+  const [name, setName] = useState('');
+  const [title, setTitle] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchAccounts() {
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name, territory')
+        .order('name');
+      
+      if (data) setAccounts(data);
+    }
+
+    async function fetchContactData() {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', contactId)
+        .single();
+
+      if (data) {
+        setAccountId(data.account_id || '');
+        setName(data.name || '');
+        setTitle(data.title || '');
+        setPhone(data.phone || '');
+        setEmail(data.email || '');
+        setNotes(data.notes || '');
+      } else if (error) {
+        console.error("Error fetching contact:", error);
+      }
+      setIsLoading(false);
+    }
+
+    fetchAccounts();
+    if (contactId) fetchContactData();
+  }, [contactId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountId) return alert("Please select a branch for this contact.");
+    
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from('contacts')
+      .update({ account_id: accountId, name, title, phone, email, notes })
+      .eq('id', contactId);
+
+    if (error) {
+      console.error("Error updating contact:", error);
+      alert("Failed to update contact: " + error.message);
+      setIsSubmitting(false);
+    } else {
+      router.back();
+    }
+  };
+
+  // NEW: Delete Function
+  const handleDelete = async () => {
+    // Built-in browser confirmation popup
+    const isConfirmed = window.confirm("Are you sure you want to delete this contact? This cannot be undone.");
+    if (!isConfirmed) return;
+
+    setIsSubmitting(true);
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', contactId);
+
+    if (error) {
+      console.error("Error deleting contact:", error);
+      alert("Failed to delete contact.");
+      setIsSubmitting(false);
+    } else {
+      // If deleted successfully, send them back to the master Rolodex
+      router.push('/contacts');
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading contact data...</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-2xl mx-auto">
+      <button 
+        onClick={() => router.back()} 
+        className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block cursor-pointer"
+      >
+        ← Back
+      </button>
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900">Edit Contact</h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Branch Location</label>
+            <select 
+              required
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+              <option value="" disabled>Select a branch...</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} {acc.territory ? `(${acc.territory})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
+              <input 
+                type="text" 
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Job Title</label>
+              <input 
+                type="text" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
+              <input 
+                type="tel" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+          {/* Additional Notes (Spans full width) */}
+          <div className="pt-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">Personal Notes & Info</label>
+            <textarea 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none resize-y"
+              placeholder="e.g., Prefers text messages, massive Yankees fan, needs extra spec sheets for counter displays..."
+            />
+          </div>
+
+          {/* UPDATED: Action Buttons with Delete */}
+          <div className="pt-4 flex items-center justify-between border-t border-gray-100">
+            <button 
+              type="button"
+              onClick={handleDelete}
+              className="text-red-600 font-bold hover:text-red-800 transition-colors px-2 py-2"
+            >
+              🗑️ Delete Contact
+            </button>
+            <div className="flex items-center gap-4">
+              <button 
+                type="button"
+                onClick={() => router.back()}
+                className="text-gray-500 font-bold hover:text-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/contacts/[id]/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+
+export default function ContactProfile() {
+  const params = useParams();
+  const contactId = params.id;
+
+  const [contact, setContact] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchContactData() {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select(`
+          *,
+          accounts (name, territory)
+        `)
+        .eq('id', contactId)
+        .single();
+
+      if (data) setContact(data);
+      if (error) console.error("Error fetching contact:", error);
+      
+      setIsLoading(false);
+    }
+
+    if (contactId) fetchContactData();
+  }, [contactId]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+  }
+
+  if (!contact) {
+    return <div className="p-8 text-center text-red-500">Contact not found.</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-4xl mx-auto space-y-8">
+      {/* Navigation */}
+      <div className="flex gap-4">
+        <Link href="/contacts" className="text-blue-600 hover:underline font-medium text-sm">
+          ← Back to Contacts
+        </Link>
+        <span className="text-gray-300">|</span>
+        <Link href={`/accounts/${contact.account_id}`} className="text-blue-600 hover:underline font-medium text-sm">
+          Go to Branch Profile →
+        </Link>
+      </div>
+
+      {/* Header Profile Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex items-center gap-6">
+          {/* Avatar Circle */}
+          <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-3xl font-black shrink-0">
+            {contact.name.charAt(0)}
+          </div>
+          
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">{contact.name}</h1>
+            <p className="text-lg text-blue-600 font-bold mt-1">{contact.title || 'Staff Member'}</p>
+            <p className="text-sm text-gray-500 font-medium mt-1">
+              📍 {contact.accounts?.name || 'Unknown Branch'} {contact.accounts?.territory ? `(${contact.accounts.territory})` : ''}
+            </p>
+          </div>
+        </div>
+        
+        <Link 
+          href={`/contacts/${contact.id}/edit`}
+          className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-lg font-bold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm shrink-0"
+        >
+          ✎ Edit Profile
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Left Column: Contact Methods */}
+        <div className="md:col-span-1 space-y-6">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-lg font-bold text-gray-900">Contact Info</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Phone</p>
+                {contact.phone ? (
+                  <a href={`tel:${contact.phone}`} className="text-gray-900 font-bold hover:text-blue-600 transition-colors flex items-center gap-2">
+                    📞 {contact.phone}
+                  </a>
+                ) : (
+                  <p className="text-gray-500 italic text-sm">No phone on file</p>
+                )}
+              </div>
+              
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Email</p>
+                {contact.email ? (
+                  <a href={`mailto:${contact.email}`} className="text-gray-900 font-bold hover:text-blue-600 transition-colors flex items-center gap-2 break-all">
+                    ✉️ {contact.email}
+                  </a>
+                ) : (
+                  <p className="text-gray-500 italic text-sm">No email on file</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Additional Notes */}
+        <div className="md:col-span-2">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden h-full">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">Personal Notes & Info</h2>
+            </div>
+            <div className="p-6">
+              {contact.notes ? (
+                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {contact.notes}
+                </p>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-sm mb-4">No additional information saved for {contact.name}.</p>
+                  <Link 
+                    href={`/contacts/${contact.id}/edit`}
+                    className="text-sm font-bold text-blue-600 hover:underline"
+                  >
+                    + Add Notes
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/contacts/new/page.tsx">
+"use client";
+
+import { useState, useEffect, Suspense } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+
+function NewContactForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // This allows you to auto-select a branch if you click "Add Contact" from a branch's profile page
+  const preSelectedAccountId = searchParams.get('accountId');
+
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountId, setAccountId] = useState(preSelectedAccountId || '');
+  const [name, setName] = useState('');
+  const [title, setTitle] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchAccounts() {
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name, territory')
+        .order('name');
+      
+      if (data) setAccounts(data);
+    }
+    fetchAccounts();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountId) return alert("Please select a branch.");
+    if (!name.trim()) return alert("Please enter a name.");
+    
+    setIsSubmitting(true);
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert([{ 
+        account_id: accountId, 
+        name: name.trim(), 
+        title: title.trim(), 
+        phone: phone.trim(), 
+        email: email.trim(),
+        notes: notes.trim()
+      }])
+      .select()
+      .single(); // We use .single() here to immediately get the ID of the person we just created
+
+    if (error) {
+      console.error("Error saving contact:", error);
+      alert("Failed to save contact: " + error.message);
+      setIsSubmitting(false);
+    } else {
+      // Success! Route them directly to the new profile page you built earlier
+      router.push(`/contacts/${data.id}`);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-8 py-6 border-b border-gray-200 bg-gray-50">
+        <h2 className="text-xl font-bold text-gray-900">Add New Contact</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        
+        {/* Branch Selection */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Branch Location</label>
+          <select 
+            required
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+          >
+            <option value="" disabled>Select a branch...</option>
+            {accounts.map(acc => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} {acc.territory ? `(${acc.territory})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Core Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
+            <input 
+              type="text" 
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Mike Johnson"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Job Title</label>
+            <input 
+              type="text" 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Branch Manager"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Contact Methods */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
+            <input 
+              type="tel" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. (555) 123-4567"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. mike@branch.com"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Additional Notes */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Personal Notes & Info</label>
+          <textarea 
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="e.g., Prefers texts, needs extra line cards, huge Yankees fan..."
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none resize-y"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-4 flex items-center justify-end gap-4 border-t border-gray-100">
+          <Link 
+            href="/contacts"
+            className="text-gray-500 font-bold hover:text-gray-700 transition-colors"
+          >
+            Cancel
+          </Link>
+          <button 
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Contact'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default function NewContactPage() {
+  return (
+    <div className="p-8 max-w-3xl mx-auto space-y-6">
+      <Link href="/contacts" className="text-blue-600 hover:underline font-medium text-sm inline-block">
+        ← Back to Contacts
+      </Link>
+      <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading form...</div>}>
+        <NewContactForm />
+      </Suspense>
+    </div>
+  );
+}
+</file>
+
+<file path="app/contacts/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+
+export default function ContactsDirectory() {
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchContacts() {
+      // Fetch all contacts AND the name of the account they belong to
+      const { data } = await supabase
+        .from('contacts')
+        .select(`
+          *,
+          accounts (name, territory)
+        `)
+        .order('name');
+      
+      if (data) setContacts(data);
+      setIsLoading(false);
+    }
+    fetchContacts();
+  }, []);
+
+  // Filter contacts by name or the branch they work at
+  const filteredContacts = contacts.filter(c => 
+    c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    c.accounts?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading master directory...</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Master Directory</h1>
+          <p className="text-gray-500 mt-2 font-medium">Your complete list of branch personnel and relationships.</p>
+        </div>
+        <Link href="/contacts/new" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Add Contact
+        </Link>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
+        <input 
+          type="text" 
+          placeholder="Search by name or branch..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+        />
+      </div>
+
+      {/* Contacts List */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-900">
+            {filteredContacts.length} Contacts Found
+          </h2>
+        </div>
+
+        <div className="divide-y divide-gray-100">
+          {filteredContacts.length > 0 ? (
+            filteredContacts.map(contact => (
+              <div key={contact.id} className="p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4 hover:bg-gray-50 transition-colors">
+                
+                {/* Contact Identity */}
+                <div>
+                  <Link href={`/contacts/${contact.id}`} className="group inline-block">
+  <h3 className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors flex items-center gap-2">
+    {contact.name}
+    <span className="opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity">→</span>
+  </h3>
+</Link>
+                  <p className="text-sm font-medium text-blue-600">{contact.title || 'Staff'}</p>
+                  
+                  {/* Branch Association */}
+                  <Link href={`/accounts/${contact.account_id}`} className="inline-block mt-2 text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors">
+                    {contact.accounts?.name || 'Unknown Branch'} 
+                    {contact.accounts?.territory ? ` (${contact.accounts.territory})` : ''}
+                  </Link>
+                </div>
+                
+                {/* Contact Methods & Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-8 shrink-0">
+                  <div className="text-sm text-gray-600 space-y-1">
+                    {contact.phone && (
+                      <a href={`tel:${contact.phone}`} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                        <span>📞</span> {contact.phone}
+                      </a>
+                    )}
+                    {contact.email && (
+                      <a href={`mailto:${contact.email}`} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                        <span>✉️</span> {contact.email}
+                      </a>
+                    )}
+                  </div>
+                  
+                  <Link 
+                    href={`/contacts/${contact.id}/edit`}
+                    className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors bg-white border border-gray-200 px-4 py-2 rounded-lg"
+                  >
+                    Edit
+                  </Link>
+                </div>
+
+              </div>
+            ))
+          ) : (
+            <div className="p-12 text-center text-gray-500">
+              No contacts match your search.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/routing/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+import { TERRITORIES } from '@/lib/constants';
+
+export default function TerritoryRouting() {
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [selectedTerritory, setSelectedTerritory] = useState('All');
+  const [routeList, setRouteList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+ 
+
+  useEffect(() => {
+    async function fetchAccounts() {
+      // Fetch active accounts that have a valid address
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name, address, territory, status')
+        .eq('status', 'Active')
+        .order('name');
+      
+      if (data) setAccounts(data);
+      setIsLoading(false);
+    }
+    fetchAccounts();
+  }, []);
+
+  // Add an account to the day's driving itinerary
+  const addToRoute = (account: any) => {
+    if (!routeList.some(item => item.id === account.id)) {
+      setRouteList([...routeList, account]);
+    }
+  };
+
+  // Remove an account from the itinerary
+  const removeFromRoute = (id: string) => {
+    setRouteList(routeList.filter(item => item.id !== id));
+  };
+
+  // Move a stop up or down in the sequence
+  const moveStop = (index: number, direction: 'up' | 'down') => {
+    const updatedList = [...routeList];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex >= 0 && targetIndex < updatedList.length) {
+      const temp = updatedList[index];
+      updatedList[index] = updatedList[targetIndex];
+      updatedList[targetIndex] = temp;
+      setRouteList(updatedList);
+    }
+  };
+
+  // Generate the native multi-stop Google Maps navigation link
+  const generateMapsLink = () => {
+    if (routeList.length === 0) return '#';
+    
+    // Base multi-destination URL structure for Google Maps
+    const origin = 'Current+Location';
+    const destination = encodeURIComponent(routeList[routeList.length - 1].address || routeList[routeList.length - 1].name);
+    
+    // Any stops in between become waypoints
+    const waypoints = routeList
+      .slice(0, -1)
+      .map(acc => encodeURIComponent(acc.address || acc.name))
+      .join('|');
+
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+  };
+
+  const filteredAccounts = selectedTerritory === 'All'
+    ? accounts
+    : accounts.filter(acc => {
+        if (!acc.territory) return false; // Skip if no territory is assigned
+        
+        // Convert both to lowercase to prevent case-sensitive mismatches
+        const dbData = acc.territory.toLowerCase();
+        const btnText = selectedTerritory.toLowerCase();
+        
+        // If the database says "New Jersey" and the button is "Northern New Jersey", it still matches!
+        return dbData.includes(btnText) || btnText.includes(dbData);
+      });
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading map engine...</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-4xl font-black text-gray-900">Territory Routing</h1>
+        <p className="text-gray-500 mt-2 font-medium">Build and optimize your field travel sequence.</p>
+      </div>
+
+      {/* Territory Filter Buttons */}
+      <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
+        {['All', ...TERRITORIES].map((t) => (
+          <button
+            key={t}
+            onClick={() => setSelectedTerritory(t)}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              selectedTerritory === t
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* LEFT COLUMN: Available Locations */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              Available Locations ({filteredAccounts.length})
+            </h2>
+            <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto pr-2">
+              {filteredAccounts.length > 0 ? (
+                filteredAccounts.map((acc) => (
+                  <div key={acc.id} className="py-4 flex justify-between items-start gap-4 group">
+                    <div>
+                      <div className="font-bold text-gray-900">{acc.name}</div>
+                      <div className="text-sm text-gray-500 mt-1 font-medium">{acc.address || 'No Address Listed'}</div>
+                      <span className="inline-block mt-2 bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">
+                        {acc.territory}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => addToRoute(acc)}
+                      disabled={routeList.some(item => item.id === acc.id)}
+                      className="shrink-0 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-40 disabled:bg-gray-50 disabled:text-gray-400 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                    >
+                      {routeList.some(item => item.id === acc.id) ? 'Added' : '+ Add to Route'}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-gray-400 text-sm">No active accounts found in this market.</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Today's Driving Itinerary */}
+        <div className="lg:col-span-1">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden sticky top-24">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">Today's Stop Sequence</h2>
+              <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                {routeList.length} Stops
+              </span>
+            </div>
+
+            <div className="p-4 divide-y divide-gray-100 min-h-[200px] max-h-[400px] overflow-y-auto">
+              {routeList.length > 0 ? (
+                routeList.map((stop, index) => (
+                  <div key={stop.id} className="py-3 flex items-center justify-between gap-3 group">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="truncate">
+                        <div className="font-bold text-gray-900 text-sm truncate">{stop.name}</div>
+                        <div className="text-xs text-gray-400 truncate">{stop.address}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Sequence Controls */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        onClick={() => moveStop(index, 'up')}
+                        disabled={index === 0}
+                        className="p-1 hover:bg-gray-100 rounded text-gray-400 disabled:opacity-20"
+                      >
+                        ▲
+                      </button>
+                      <button 
+                        onClick={() => moveStop(index, 'down')}
+                        disabled={index === routeList.length - 1}
+                        className="p-1 hover:bg-gray-100 rounded text-gray-400 disabled:opacity-20"
+                      >
+                        ▼
+                      </button>
+                      <button 
+                        onClick={() => removeFromRoute(stop.id)}
+                        className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded ml-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-gray-400 text-sm flex flex-col items-center justify-center h-full">
+                  <span>No stops selected yet.</span>
+                  <span className="text-xs mt-1 text-gray-400">Click "+ Add to Route" to begin.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Launch Button */}
+            <div className="p-4 bg-gray-50 border-t border-gray-100">
+              <a
+                href={generateMapsLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full block text-center font-bold text-sm py-3 px-4 rounded-xl transition-colors shadow-sm ${
+                  routeList.length > 0
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+                onClick={(e) => routeList.length === 0 && e.preventDefault()}
+              >
+                🚀 Launch Route in Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/tasks/new/page.tsx">
+"use client";
+
+import { useState, useEffect, Suspense } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { SALES_TEAM } from '@/lib/constants';
+function NewTaskForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preSelectedAccountId = searchParams.get('accountId');
+
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountId, setAccountId] = useState(preSelectedAccountId || '');
+  const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [repName, setRepName] = useState('');
+  const [status, setStatus] = useState('Pending');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchAccounts() {
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name, territory')
+        .order('name');
+      
+      if (data) setAccounts(data);
+    }
+    fetchAccounts();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountId) return alert("Please select an account.");
+    if (!repName) return alert("Please select who this is assigned to.");
+    
+    setIsSubmitting(true);
+
+    // IMPORTANT: Change 'tasks' to 'action_items' below if that's what your database uses!
+    const { error } = await supabase
+      .from('tasks')
+      .insert([{ 
+        account_id: accountId, 
+        title, 
+        due_date: dueDate || null, 
+        rep_name: repName,
+        status 
+      }]);
+
+    if (error) {
+      console.error("Error saving task:", error);
+      alert("Failed to save task: " + error.message);
+      setIsSubmitting(false);
+    } else {
+      router.push(`/accounts/${accountId}`);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-8 py-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-900">Add New Task</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        
+        {/* Branch & Assigned Rep */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Branch</label>
+            <select 
+              required
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+              <option value="" disabled>Select a branch...</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} {acc.territory ? `(${acc.territory})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Assigned To</label>
+            <select 
+              required
+              value={repName}
+              onChange={(e) => setRepName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+             <option value="" disabled>Who is doing this?</option>
+{SALES_TEAM.map(name => (
+  <option key={name} value={name}>{name}</option>
+))}
+            </select>
+          </div>
+        </div>
+
+        {/* Task Details */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">What needs to be done?</label>
+          <input 
+            type="text" 
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Send Supco pump pricing sheet"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+          />
+        </div>
+
+        {/* Date & Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Due Date (Optional)</label>
+            <input 
+              type="date" 
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
+            <select 
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white"
+            >
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-4 flex items-center justify-end gap-4 border-t border-gray-100">
+          <button 
+            type="button"
+            onClick={() => router.back()}
+            className="text-gray-500 font-bold hover:text-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Task'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default function NewTaskPage() {
+  return (
+    <div className="p-8 max-w-6xl mx-auto">
+      <button 
+        onClick={() => window.history.back()} 
+        className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block cursor-pointer"
+      >
+        ← Back
+      </button>
+      <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading form...</div>}>
+        <NewTaskForm />
+      </Suspense>
+    </div>
+  );
+}
+</file>
+
+<file path="app/tasks/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+
+export default function GlobalTasksPage() {
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  async function fetchTasks() {
+    // We are pulling the tasks and linking them directly to the account name
+    const { data, error } = await supabase
+      .from('tasks') // Note: If your table is still 'action_items', change it here!
+      .select(`
+        *,
+        accounts(name, territory)
+      `)
+      .order('due_date', { ascending: true }); // Closest due dates at the top
+    
+    if (error) {
+      console.error("Error fetching tasks:", error);
+    } else if (data) {
+      setTasks(data);
+    }
+    setIsLoading(false);
+  }
+
+  // Quick-complete feature! Lets you check off tasks directly from this page.
+  const toggleTaskStatus = async (taskId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Pending' ? 'Completed' : 'Pending';
+    
+    // 1. Update the UI instantly so it feels fast
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+
+    // 2. Save it to the database quietly in the background
+    const { error } = await supabase
+      .from('tasks')
+      .update({ status: newStatus })
+      .eq('id', taskId);
+
+    if (error) {
+      alert("Failed to update task. Check your connection.");
+      fetchTasks(); // Revert if it failed
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading dispatch board...</div>;
+  }
+
+  // Split tasks into two buckets for the UI
+  const pendingTasks = tasks.filter(t => t.status !== 'Completed');
+  const completedTasks = tasks.filter(t => t.status === 'Completed');
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Team Tasks</h1>
+          <p className="text-gray-500 mt-2 font-medium">Global dispatch board for all field reps.</p>
+        </div>
+        <Link href="/tasks/new" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Add Task
+        </Link>
+      </div>
+
+      {/* PENDING TASKS */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-900">
+            Pending Actions ({pendingTasks.length})
+          </h2>
+        </div>
+        
+        <div className="divide-y divide-gray-100">
+          {pendingTasks.length > 0 ? (
+            pendingTasks.map((task) => (
+              <div key={task.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-lg font-bold text-gray-900">{task.title}</h3>
+                    <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                      Pending
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm mt-2">
+                    <Link href={`/accounts/${task.account_id}`} className="font-bold text-blue-600 hover:underline">
+                      🏢 {task.accounts?.name || 'Unknown Branch'}
+                    </Link>
+                    <span className="text-gray-500 font-medium">
+                      👤 {task.rep_name || 'Unassigned'}
+                    </span>
+                    <span className={`font-medium ${
+                      task.due_date && new Date(task.due_date) < new Date() ? 'text-red-600' : 'text-gray-500'
+                    }`}>
+                      📅 {task.due_date || 'No Date'}
+                    </span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => toggleTaskStatus(task.id, task.status)}
+                  className="w-full md:w-auto bg-white border-2 border-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-bold hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all shrink-0"
+                >
+                  ✓ Mark Complete
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="p-12 text-center text-gray-500">
+              No pending tasks. The board is clear!
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* COMPLETED TASKS (Shows at the bottom) */}
+      {completedTasks.length > 0 && (
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-100">
+            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+              Recently Completed ({completedTasks.length})
+            </h2>
+          </div>
+          
+          <div className="divide-y divide-gray-200">
+            {completedTasks.map((task) => (
+              <div key={task.id} className="p-4 px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="font-bold text-gray-600 line-through">{task.title}</h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {task.accounts?.name} • Completed by {task.rep_name}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => toggleTaskStatus(task.id, task.status)}
+                  className="text-sm font-bold text-blue-600 hover:underline"
+                >
+                  Undo
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+</file>
+
+<file path="app/tech-library/[id]/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+
+export default function VendorDocuments() {
+  const params = useParams();
+  const vendorId = params.id;
+
+  const [vendor, setVendor] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      // 1. Fetch the vendor as an array to avoid the .single() crash
+      const { data: vendorData, error: vendorError } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('id', vendorId);
+
+      // 2. Fetch the documents
+      const { data: docsData, error: docsError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('vendor_id', vendorId)
+        .order('title');
+
+      // 3. If the array has the vendor, grab the first one
+      if (vendorData && vendorData.length > 0) {
+        setVendor(vendorData[0]);
+      }
+      
+      if (docsData) {
+        setDocuments(docsData);
+      }
+      
+      setIsLoading(false);
+    }
+
+    if (vendorId) fetchData();
+  }, [vendorId]);
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading documents...</div>;
+  
+  if (!vendor) return (
+    <div className="p-8 text-center text-red-500 space-y-4">
+      <h2 className="text-xl font-bold">Manufacturer not found.</h2>
+      <Link href="/tech-library" className="text-blue-600 hover:underline">
+        ← Go back to Library
+      </Link>
+    </div>
+  );
+
+  const filteredDocs = documents.filter(doc => 
+    doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    doc.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      <Link href="/tech-library" className="text-blue-600 hover:underline font-medium text-sm">
+        ← Back to Manufacturers
+      </Link>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900">{vendor.name} Library</h1>
+          <p className="text-gray-500 mt-1 font-medium">{documents.length} documents available</p>
+        </div>
+        <Link href="/tech-library/upload" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Upload New
+        </Link>
+      </div>
+
+      {documents.length > 0 && (
+        <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
+          <input 
+            type="text" 
+            placeholder="Search documents by title or category..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+          />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredDocs.length > 0 ? (
+          filteredDocs.map(doc => {
+            const fileUrl = supabase.storage.from('vendor-files').getPublicUrl(doc.file_path).data.publicUrl;
+
+            return (
+              <a 
+                key={doc.id} 
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-500 hover:shadow-md transition-all group block"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded">
+                    {doc.category}
+                  </span>
+                  <span className="text-gray-400 group-hover:text-blue-600 transition-colors">↗</span>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                  {doc.title}
+                </h3>
+              </a>
+            )
+          })
+        ) : (
+          <div className="col-span-full p-12 text-center text-gray-500 bg-white border border-gray-200 rounded-2xl">
+            No documents found for {vendor.name}.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/tech-library/upload/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useRouter } from 'next/navigation';
+
+export default function UploadDocument() {
+  const router = useRouter();
+  
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [vendorId, setVendorId] = useState('');
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Spec Sheet');
+  const [file, setFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchVendors() {
+      const { data } = await supabase
+        .from('vendors')
+        .select('id, name')
+        .order('name');
+      
+      if (data) setVendors(data);
+    }
+    fetchVendors();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return alert("Please select a file to upload.");
+    if (!vendorId) return alert("Please select a vendor.");
+    
+    setIsSubmitting(true);
+
+    // 1. Create a unique file name to prevent overwriting (e.g., 168439002-genteq-motor.pdf)
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    // 2. Upload the physical file to the Supabase Storage bucket
+    const { error: uploadError } = await supabase.storage
+      .from('vendor-files')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error("Upload Error:", uploadError);
+      alert("Failed to upload file: " + uploadError.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 3. Save the record in the 'documents' database table
+    const { error: dbError } = await supabase
+      .from('documents')
+      .insert([{
+        vendor_id: vendorId,
+        title,
+        category,
+        file_path: filePath
+      }]);
+
+    if (dbError) {
+      console.error("Database Error:", dbError);
+      alert("File uploaded, but failed to save database record.");
+      setIsSubmitting(false);
+    } else {
+      router.push('/tech-library');
+    }
+  };
+
+  return (
+    <div className="p-8 max-w-2xl mx-auto">
+      <button 
+        onClick={() => router.back()} 
+        className="text-blue-600 hover:underline font-medium text-sm mb-6 inline-block"
+      >
+        ← Back to Library
+      </button>
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-xl font-bold text-gray-900">Upload Tech Document</h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Vendor</label>
+              <select 
+                required
+                value={vendorId}
+                onChange={(e) => setVendorId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+              >
+                <option value="" disabled>Select a vendor...</option>
+                {vendors.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+              <select 
+                required
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+              >
+                <option value="Spec Sheet">Spec Sheet</option>
+                <option value="Pricing">Pricing</option>
+                <option value="Cross-Reference">Cross-Reference</option>
+                <option value="Installation Manual">Installation Manual</option>
+                <option value="Warranty Info">Warranty Info</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Document Title</label>
+            <input 
+              type="text" 
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Genteq Evergreen IM Installation Manual"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">File (PDF, Image, etc.)</label>
+            <input 
+              type="file" 
+              required
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+
+          <div className="pt-4 flex justify-end gap-4 border-t border-gray-100">
+            <button 
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+            >
+              {isSubmitting ? 'Uploading...' : 'Upload Document'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/tech-library/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
+
+export default function TechLibraryVendors() {
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // New State for adding a vendor
+  const [isAddingVendor, setIsAddingVendor] = useState(false);
+  const [newVendorName, setNewVendorName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  async function fetchVendors() {
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('*')
+      .order('name');
+    
+    if (data) setVendors(data);
+    if (error) console.error("Error fetching vendors:", error);
+    setIsLoading(false);
+  }
+
+  // The function to save a new manufacturer
+  const handleAddVendor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newVendorName.trim()) return;
+    
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from('vendors')
+      .insert([{ name: newVendorName.trim() }]);
+
+    if (error) {
+      console.error("Error saving vendor:", error);
+      alert("Failed to save manufacturer: " + error.message);
+    } else {
+      // Success! Clear the form, close the box, and refresh the list
+      setNewVendorName('');
+      setIsAddingVendor(false);
+      fetchVendors();
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const filteredVendors = vendors.filter(v => 
+    v.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading manufacturers...</div>;
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Tech Library</h1>
+          <p className="text-gray-500 mt-2 font-medium">Select a manufacturer to view spec sheets and manuals.</p>
+        </div>
+        <Link href="/tech-library/upload" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Upload Document
+        </Link>
+      </div>
+
+      {/* Toolbar: Search and Add Button */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 bg-white p-2 border border-gray-200 rounded-xl shadow-sm flex">
+          <input 
+            type="text" 
+            placeholder="Search manufacturers..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent px-4 py-2 text-gray-900 outline-none"
+          />
+        </div>
+        <button 
+          onClick={() => setIsAddingVendor(!isAddingVendor)}
+          className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm shrink-0"
+        >
+          {isAddingVendor ? 'Cancel' : '+ Add Manufacturer'}
+        </button>
+      </div>
+
+      {/* Dropdown Form for Adding a Vendor */}
+      {isAddingVendor && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top-2 fade-in duration-200">
+          <form onSubmit={handleAddVendor} className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-bold text-blue-900 mb-2">New Manufacturer Name</label>
+              <input 
+                type="text" 
+                autoFocus
+                required
+                value={newVendorName}
+                onChange={(e) => setNewVendorName(e.target.value)}
+                placeholder="e.g. Trane, Mitsubishi, LG..."
+                className="w-full border border-blue-200 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white shadow-sm"
+              />
+            </div>
+            <button 
+              type="submit"
+              disabled={isSubmitting || !newVendorName.trim()}
+              className="w-full md:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 h-[50px]"
+            >
+              {isSubmitting ? 'Saving...' : 'Save'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Vendor Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredVendors.length > 0 ? (
+          filteredVendors.map(vendor => (
+            <Link 
+              key={vendor.id} 
+              href={`/tech-library/${vendor.id}`}
+              className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-500 hover:shadow-md transition-all group flex items-center justify-between"
+            >
+              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                {vendor.name}
+              </h3>
+              <span className="text-gray-400 group-hover:text-blue-600 transition-colors text-xl">
+                →
+              </span>
+            </Link>
+          ))
+        ) : (
+          <div className="col-span-full p-12 text-center text-gray-500 bg-white border border-gray-200 rounded-2xl">
+            {searchQuery ? "No manufacturers match your search." : "No manufacturers found. Click 'Add Manufacturer' to start your list."}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from 'next';
+import './globals.css';
+import GlobalSearch from './components/GlobalSearch';
+import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: "HVAC Field Command",
+  description: "Territory management and field notes",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#2563eb",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className="bg-gray-50 text-gray-900 h-screen flex flex-col overflow-hidden">
+        
+        {/* TOP NAVIGATION BAR */}
+        <nav className="bg-white border-b border-gray-200 shrink-0 z-40 shadow-sm relative">
+          <div className="px-6 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <Link href="/">
+              <span className="font-black text-xl text-blue-600 tracking-tight hover:opacity-80">
+                Field Command
+              </span>
+            </Link>
+            
+            {/* The Global Search Bar */}
+            <div className="w-full sm:w-auto flex-1 sm:max-w-md flex justify-end">
+              <GlobalSearch />
+            </div>
+          </div>
+        </nav>
+
+        {/* MAIN APP CONTAINER */}
+        <div className="flex flex-1 overflow-hidden">
+          
+          {/* SIDEBAR (Hidden on tiny mobile screens, visible on tablets/desktops) */}
+          <aside className="w-64 bg-gray-900 text-white flex-shrink-0 overflow-y-auto hidden md:block">
+  <nav className="p-4 space-y-2 mt-4">
+    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-4">Menu</div>
+    <Link href="/" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      📊 Dashboard
+    </Link>
+    <Link href="/accounts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      🏢 Accounts
+    </Link>
+    <Link href="/routing" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      🗺️ Territory Routing
+    </Link>
+    <Link href="/contacts" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      👥 Contacts
+    </Link>
+    <Link href="/tasks" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      ✅ Tasks
+    </Link>
+    <Link href="/tech-library" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+      📚 Tech Library
+    </Link>
+    <Link href="/calendar" className="block px-4 py-2.5 hover:bg-gray-800 rounded-lg font-medium transition-colors">
+  <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+  </svg>
+  <span className="font-medium">Events</span>
+</Link>
+  </nav>
+</aside>
+
+          {/* SCROLLABLE PAGE CONTENT */}
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+
+        </div>
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="app/page.tsx">
+"use client";
+
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import Link from 'next/link';
+
+export default function Dashboard() {
+  const [recentCalls, setRecentCalls] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      // Notice we added 'rep_name' right after 'notes' in this query
+      const { data: calls } = await supabase
+        .from('calls')
+        .select(`
+          id, 
+          date, 
+          type, 
+          notes, 
+          rep_name,
+          accounts (name)
+        `)
+        .order('date', { ascending: false })
+        .limit(10);
+
+      if (calls) setRecentCalls(calls);
+      setIsLoading(false);
+    }
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading command center...</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Daily Briefing</h1>
+          <p className="text-gray-500 mt-2 font-medium">Here is the latest activity from the field.</p>
+        </div>
+        <Link href="/calls/new" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          + Log Visit
+        </Link>
+      </div>
+
+      {/* Activity Ticker */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-900">Live Field Activity</h2>
+          <span className="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+            Live
+          </span>
+        </div>
+        
+        <div className="divide-y divide-gray-100">
+          {recentCalls.length > 0 ? (
+            recentCalls.map((call) => (
+              <div key={call.id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-2">
+                    {/* Rep Name Badge */}
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+                      {call.rep_name ? call.rep_name.charAt(0) : '?'}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-900 font-medium">
+                        <span className="font-bold">{call.rep_name || 'A team member'}</span> completed a <span className="font-bold">{call.type}</span> at <span className="font-bold text-blue-600">{call.accounts?.name || 'Unknown Account'}</span>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{call.date}</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-3 pl-10 bg-white p-3 border border-gray-100 rounded-lg italic">
+                  "{call.notes}"
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-gray-500 text-sm">
+              No recent field activity found. Go log some visits!
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="lib/constants.ts">
+// lib/constants.ts
+
+export const SALES_TEAM = [
+  "John Cunningham",  
+  "Alejandro Reanos", 
+  "Joe McIlvain", 
+  "Brian Jr.",
+  "Matt Doty",
+  "Jeff Ross",
+  "Jim Cunningham",
+  "Matt Kavanagh",
+  "Rob Gilooly",
+  "Rick Kisser"
+];
+
+export const TERRITORIES = [
+  'ME', 'NH', 'VT', 'MA', 'RI', 'CT', 'NY', 'NJ', 'PA', 
+  'DE', 'MD', 'DC', 'VA', 'NC', 'SC', 'GA', 'FL'
+];
+
+export const VISIT_TYPES = [
+  "Branch Visit",
+  "Counter Day",
+  "Lunch & Learn",
+  "Follow-up",
+  "Cold Call",
+  "Other"
+];
+</file>
+
+<file path="lib/supabase.ts">
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/manifest.json">
+{
+  "name": "HVAC Field Command",
+  "short_name": "Field Command",
+  "description": "Territory management and field activity tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="AGENTS.md">
+<!-- BEGIN:nextjs-agent-rules -->
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+<!-- END:nextjs-agent-rules -->
+</file>
+
+<file path="CLAUDE.md">
+@AGENTS.md
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="next.config.ts">
+import withPWAInit from "@ducanh2912/next-pwa";
+import type { NextConfig } from "next";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  swcMinify: true,
+  disable: process.env.NODE_ENV === "development", // Disables PWA in dev mode
+});
+
+const nextConfig: NextConfig = {
+  // Any existing config you had goes here
+};
+
+export default withPWA(nextConfig);
+</file>
+
+<file path="package.json">
+{
+  "name": "cksales-crm",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@supabase/supabase-js": "^2.105.4",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+</files>
