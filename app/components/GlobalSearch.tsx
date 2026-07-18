@@ -44,7 +44,7 @@ export default function GlobalSearch() {
         .ilike('name', `%${query}%`)
         .limit(3);
 
-      const combinedResults = [];
+      const combinedResults: any[] = [];
 
       // Format Account results
       if (accounts) {
