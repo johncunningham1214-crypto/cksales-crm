@@ -66,7 +66,7 @@ export default function GlobalSearch() {
             id: `con-${contact.id}`,
             type: 'Contact',
             name: contact.name,
-            subtext: `${contact.title || 'Staff'} @ ${contact.accounts?.name || 'Unknown Branch'}`,
+            subtext: `${contact.title || 'Staff'} @ ${(contact.accounts as any)?.name || (contact.accounts as any)?.[0]?.name || 'Unknown Branch'}`,
             link: `/accounts/${contact.account_id}` // Links straight to the branch they belong to
           });
         });
