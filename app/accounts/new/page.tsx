@@ -13,6 +13,7 @@ export default function NewAccount() {
   const [territory, setTerritory] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('Active');
+  const [isContractor, setIsContractor] = useState(false);
   
   // Hierarchy Info
   const [isParent, setIsParent] = useState(false);
@@ -48,7 +49,8 @@ export default function NewAccount() {
           status,
           is_parent: isParent,
           // If it is a parent, it can't have a parent. If a parent is selected, save it.
-          parent_id: isParent ? null : (parentId || null) 
+          parent_id: isParent ? null : (parentId || null), 
+          is_contractor: isContractor
         }
       ]);
 
@@ -146,6 +148,20 @@ export default function NewAccount() {
             />
           </div>
         </div>
+        {/* --- CONTRACTOR TOGGLE (PASTE THIS BLOCK HERE) --- */}
+        <div className="flex items-center mb-6 mt-6">
+          <input
+            type="checkbox"
+            id="is_contractor"
+            checked={isContractor}
+            onChange={(e) => setIsContractor(e.target.checked)}
+            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+          />
+          <label htmlFor="is_contractor" className="ml-3 text-sm font-bold text-gray-700 cursor-pointer">
+            Mark as HVAC Contractor
+          </label>
+        </div>
+        {/* ------------------------------------------------ */}
 
         <div className="pt-4 flex justify-end">
           <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-sm">

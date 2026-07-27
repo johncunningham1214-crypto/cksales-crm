@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { SALES_TEAM } from '@/lib/constants';
 
 export default function AccountsDirectory() {
+  const [activeTab, setActiveTab] = useState<'regular' | 'contractor'>('regular');
   const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -67,6 +68,20 @@ export default function AccountsDirectory() {
               className="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none shadow-sm"
             />
           </div>
+          <div className="flex space-x-4 mb-6 border-b pb-2">
+  <button
+    onClick={() => setActiveTab('regular')}
+    className={`pb-2 px-1 font-semibold ${activeTab === 'regular' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+  >
+    Regular Accounts
+  </button>
+  <button
+    onClick={() => setActiveTab('contractor')}
+    className={`pb-2 px-1 font-semibold ${activeTab === 'contractor' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+  >
+    Contractors
+  </button>
+</div>
 
           {/* Salesman Filter */}
           <select 
@@ -95,7 +110,9 @@ export default function AccountsDirectory() {
         <div className="text-center py-12 text-gray-500 font-medium">Loading accounts...</div>
       ) : filteredAccounts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {filteredAccounts.map(account => (
+          {filteredAccounts
+  .filter(account => activeTab === 'contractor' ? account.is_contractor : !account.is_contractor)
+  .map(account => (
             <Link 
               key={account.id} 
               href={`/accounts/${account.id}`} 
