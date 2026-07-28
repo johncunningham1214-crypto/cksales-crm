@@ -82,6 +82,18 @@ export default function CallReport() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
+      
+      {/* NEW: Force all parent layouts to expand when printing */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          html, body, main, div {
+            height: auto !important;
+            overflow: visible !important;
+            position: static !important;
+          }
+        }
+      `}} />
+
       {/* Header */}
       <div className="print:hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
