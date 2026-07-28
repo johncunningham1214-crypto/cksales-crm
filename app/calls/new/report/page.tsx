@@ -177,7 +177,7 @@ export default function CallReport() {
       </div>
 
       {/* Results */}
-      <div className="bg-white border print:border-none border-gray-200 rounded-2xl shadow-sm print:shadow-none overflow-hidden">
+      <div className="bg-white border print:border-none border-gray-200 rounded-2xl shadow-sm print:shadow-none overflow-hidden print:overflow-visible">
         <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 print:bg-white flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-900">
             {isLoading ? 'Generating...' : `${calls.length} Calls Logged`}
