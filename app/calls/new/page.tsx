@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { SALES_TEAM, VENDORS } from '@/lib/constants'; 
 
-export default function LogCall() {
+export default function NewCall() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedAccountId = searchParams.get('accountId');
@@ -15,13 +14,13 @@ export default function LogCall() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Form State
+  // Form State (Starts blank for a new call)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [repName, setRepName] = useState('');
   const [accountId, setAccountId] = useState(preselectedAccountId || '');
   const [type, setType] = useState('Field Visit');
   const [notes, setNotes] = useState('');
-  const [selectedVendors, setSelectedVendors] = useState<string[]>([]); // NEW: Track tagged vendors
+  const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchAccounts() {
@@ -37,7 +36,6 @@ export default function LogCall() {
     fetchAccounts();
   }, []);
 
-  // NEW: Handle vendor checkbox toggles
   const toggleVendor = (vendor: string) => {
     setSelectedVendors(prev => 
       prev.includes(vendor) 
@@ -58,7 +56,7 @@ export default function LogCall() {
         account_id: accountId === "" ? null : accountId,
         type,
         notes,
-        vendors: selectedVendors // NEW: Save the tags to the database
+        vendors: selectedVendors
       }]);
 
     if (error) {
@@ -72,6 +70,7 @@ export default function LogCall() {
       } else {
         router.push('/');
       }
+      router.refresh();
     }
   };
 
@@ -89,7 +88,6 @@ export default function LogCall() {
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Date */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Date of Visit *</label>
             <input 
@@ -101,7 +99,6 @@ export default function LogCall() {
             />
           </div>
 
-          {/* Rep Name */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Salesman *</label>
             <select 
@@ -118,7 +115,6 @@ export default function LogCall() {
           </div>
         </div>
 
-        {/* Account Location */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Account / Branch Location *</label>
           <select 
@@ -134,7 +130,6 @@ export default function LogCall() {
           </select>
         </div>
 
-        {/* Visit Type */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Type of Visit *</label>
           <select 
@@ -152,7 +147,6 @@ export default function LogCall() {
           </select>
         </div>
 
-        {/* NEW: Vendor Tags Grid */}
         <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
           <label className="block text-sm font-bold text-gray-900 mb-3">Vendors Discussed / Pitched</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -170,7 +164,6 @@ export default function LogCall() {
           </div>
         </div>
 
-        {/* Notes */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Visit Notes & Action Items</label>
           <textarea 
@@ -182,7 +175,6 @@ export default function LogCall() {
           ></textarea>
         </div>
 
-        {/* Submit Button */}
         <div className="pt-4 border-t border-gray-100">
           <button 
             type="submit"
@@ -196,4 +188,3 @@ export default function LogCall() {
     </div>
   );
 }
-// --- END OF FILE ---

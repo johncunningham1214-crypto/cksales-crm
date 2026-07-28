@@ -240,7 +240,7 @@ export default function AccountProfile() {
                       
                       {/* NEW: Edit Call Button */}
                       <Link 
-                        href={`/calls/new/${call.id}/edit`} 
+                        href={`/calls/${call.id}/edit`} 
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md"
                       >
                         ✎ Edit Note
