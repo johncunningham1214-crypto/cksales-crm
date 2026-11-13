@@ -16,6 +16,55 @@ export default function AccountProfile() {
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Account notes: a running log stored in the accounts.notes column
+  const [noteDraft, setNoteDraft] = useState('');
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesEdit, setNotesEdit] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [notesError, setNotesError] = useState('');
+
+  async function saveNotes(newNotes: string) {
+    const { data, error } = await supabase
+      .from('accounts')
+      .update({ notes: newNotes.trim() || null })
+      .eq('id', accountId)
+      .select('notes');
+
+    if (error || !data || data.length === 0) {
+      setNotesError(error?.message || 'Could not save the note. Please try again.');
+      return false;
+    }
+    setAccount((prev: any) => ({ ...prev, notes: data[0].notes }));
+    return true;
+  }
+
+  async function handleAddNote() {
+    const text = noteDraft.trim();
+    if (!text || isSavingNotes) return;
+    setIsSavingNotes(true);
+    setNotesError('');
+
+    // Re-read the latest notes first so a teammate's recent note isn't overwritten
+    const { data: latest } = await supabase.from('accounts').select('notes').eq('id', accountId).single();
+    const existing = latest?.notes ?? account.notes ?? '';
+
+    const stamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const entry = `${stamp}: ${text}`;
+    const saved = await saveNotes(existing ? `${entry}\n\n${existing}` : entry);
+
+    if (saved) setNoteDraft('');
+    setIsSavingNotes(false);
+  }
+
+  async function handleSaveNotesEdit() {
+    if (isSavingNotes) return;
+    setIsSavingNotes(true);
+    setNotesError('');
+    const saved = await saveNotes(notesEdit);
+    if (saved) setIsEditingNotes(false);
+    setIsSavingNotes(false);
+  }
+
   useEffect(() => {
     async function fetchAccountData() {
       const today = new Date().toISOString().split('T')[0];
@@ -144,6 +193,81 @@ export default function AccountProfile() {
                 ))
               ) : (
                 <div className="p-8 text-center text-gray-500 text-sm">No contacts listed.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Account Notes */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">Notes</h2>
+              {account.notes && !isEditingNotes && (
+                <button
+                  type="button"
+                  onClick={() => { setNotesEdit(account.notes || ''); setNotesError(''); setIsEditingNotes(true); }}
+                  className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-3 py-1.5 rounded-lg"
+                >
+                  ✎ Edit
+                </button>
+              )}
+            </div>
+
+            <div className="p-6 space-y-4">
+              {notesError && (
+                <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm font-bold border border-red-200">{notesError}</div>
+              )}
+
+              {isEditingNotes ? (
+                <>
+                  <textarea
+                    value={notesEdit}
+                    onChange={(e) => setNotesEdit(e.target.value)}
+                    rows={10}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none transition-shadow"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveNotesEdit}
+                      disabled={isSavingNotes}
+                      className="flex-1 bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {isSavingNotes ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setIsEditingNotes(false); setNotesError(''); }}
+                      disabled={isSavingNotes}
+                      className="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    rows={3}
+                    placeholder="Type a new note..."
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none transition-shadow"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNote}
+                    disabled={isSavingNotes || !noteDraft.trim()}
+                    className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {isSavingNotes ? 'Saving...' : '+ Add Note'}
+                  </button>
+
+                  {account.notes ? (
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap break-words border-t border-gray-100 pt-4">{account.notes}</p>
+                  ) : (
+                    <p className="text-center text-gray-500 text-sm">No notes yet.</p>
+                  )}
+                </>
               )}
             </div>
           </div>
