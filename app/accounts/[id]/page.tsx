@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import BranchLines from '@/app/components/BranchLines';
 
 export default function AccountProfile() {
   const params = useParams();
@@ -168,6 +169,10 @@ export default function AccountProfile() {
         
         {/* LEFT COLUMN: Contacts */}
         <div className="lg:col-span-1 space-y-6">
+          {!account.is_parent && (
+            <BranchLines accountId={account.id} territory={account.territory} />
+          )}
+
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">HQ Contacts</h2>

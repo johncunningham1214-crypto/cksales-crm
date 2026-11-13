@@ -96,6 +96,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <Link href="/accounts" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.includes('/accounts') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
         <span className="w-6 text-center text-lg">🏢</span><span>Accounts</span>
       </Link>
+      <Link href="/lines" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.startsWith('/lines') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
+        <span className="w-6 text-center text-lg">🏭</span><span>Our Lines</span>
+      </Link>
+      <Link href="/imports" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.startsWith('/imports') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
+        <span className="w-6 text-center text-lg">💲</span><span>Sales Data</span>
+      </Link>
       <Link href="/contacts" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.includes('/contacts') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
         <span className="w-6 text-center text-lg">👥</span><span>Contacts</span>
       </Link>
