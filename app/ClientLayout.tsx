@@ -96,6 +96,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <Link href="/accounts" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.includes('/accounts') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
         <span className="w-6 text-center text-lg">🏢</span><span>Accounts</span>
       </Link>
+      <Link href="/contacts" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.includes('/contacts') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
+        <span className="w-6 text-center text-lg">👥</span><span>Contacts</span>
+      </Link>
       <Link href="/calls/new" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname === '/calls/new' ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
         <span className="w-6 text-center text-lg">📍</span><span>Log Visit</span>
       </Link>
