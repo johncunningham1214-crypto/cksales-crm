@@ -20,7 +20,14 @@ export default function NewCall() {
   const [accountId, setAccountId] = useState(preselectedAccountId || '');
   const [type, setType] = useState('Field Visit');
   const [notes, setNotes] = useState('');
-  const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+  // Lines passed in from the pre-call brief (?vendors=NuCalgon,Inficon), matched loosely to our list
+  const squash = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const [selectedVendors, setSelectedVendors] = useState<string[]>(() =>
+    (searchParams.get('vendors') || '')
+      .split(',')
+      .map(v => VENDORS.find(x => squash(x) === squash(v)))
+      .filter((v): v is string => !!v)
+  );
 
   useEffect(() => {
     async function fetchAccounts() {

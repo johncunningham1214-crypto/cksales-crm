@@ -29,12 +29,15 @@ with lines(name) as (values
 )
 insert into public.vendors (name, is_principal)
 select l.name, true from lines l
-where not exists (select 1 from public.vendors v where lower(v.name) = lower(l.name));
+where not exists (
+  select 1 from public.vendors v
+  where regexp_replace(lower(v.name), '[^a-z0-9]', '', 'g') = regexp_replace(lower(l.name), '[^a-z0-9]', '', 'g')
+);
 
 update public.vendors set is_principal = true
-where lower(name) in (
-  'nucalgon','regal rexnord','browning belts','supco','harris','ncp','kiwi climate',
-  'lh dottie','tuttle & bailey','inficon','parker filtration','aldes','ram fabrication','arrco compressors','holyoke fittings'
+where regexp_replace(lower(name), '[^a-z0-9]', '', 'g') in (
+  'nucalgon','regalrexnord','browningbelts','supco','harris','ncp','kiwiclimate',
+  'lhdottie','tuttlebailey','inficon','parkerfiltration','aldes','ramfabrication','arrcocompressors','holyokefittings'
 );
 
 -- ---------------------------------------------------------------------

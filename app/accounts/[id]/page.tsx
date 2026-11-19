@@ -156,6 +156,9 @@ export default function AccountProfile() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+          <Link href={`/accounts/${account.id}/brief`} className="bg-gray-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-sm text-center">
+            📋 Pre-call Brief
+          </Link>
           <Link href={`/accounts/${account.id}/edit`} className="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm text-center">
             ✏️ Edit Account
           </Link>
