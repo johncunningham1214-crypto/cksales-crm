@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import ShareToggle from '@/app/components/ShareToggle';
 import { useRouter, useParams } from 'next/navigation';
@@ -14,6 +14,7 @@ export default function EditCall() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   // Form State
   const [date, setDate] = useState('');
@@ -79,6 +80,8 @@ export default function EditCall() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
 
     const { error } = await supabase
@@ -99,6 +102,7 @@ export default function EditCall() {
     if (error) {
       console.error("Error updating call:", error);
       alert("Failed to update visit: " + error.message);
+      savingRef.current = false;
       setIsSaving(false);
     } else {
       // Send them back to the previous page

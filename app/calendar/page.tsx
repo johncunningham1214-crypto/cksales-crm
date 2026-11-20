@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { localISODate } from '@/lib/dates';
 import Link from 'next/link';
 import { SALES_TEAM } from '@/lib/constants';
 
@@ -22,6 +23,7 @@ export default function Calendar() {
   const [description, setDescription] = useState('');
   const [salesman, setSalesman] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     fetchData();
@@ -30,7 +32,7 @@ export default function Calendar() {
 
   async function fetchData() {
     setIsLoading(true);
-    const today = new Date().toISOString().split('T')[0];
+    const today = localISODate();
     
     // Fetch Accounts for the dropdown form
     const { data: accountsData } = await supabase
@@ -94,6 +96,10 @@ export default function Calendar() {
     e.preventDefault();
     if (!title.trim() || !eventDate) return;
     
+    if (savingRef.current) return;
+    
+    savingRef.current = true;
+    
     setIsSubmitting(true);
 
     const eventPayload = {
@@ -120,6 +126,8 @@ export default function Calendar() {
       resetForm();
       fetchData();
     }
+    
+    savingRef.current = false;
     
     setIsSubmitting(false);
   };
@@ -308,7 +316,7 @@ export default function Calendar() {
                   )}
                 </div>
 
-                <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="shrink-0">
                   <button 
                     onClick={() => handleEditClick(event)}
                     className="text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"

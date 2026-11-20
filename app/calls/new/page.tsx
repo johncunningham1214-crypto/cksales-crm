@@ -1,13 +1,33 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ShareToggle from '@/app/components/ShareToggle';
 import { useMe } from '@/lib/me';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SALES_TEAM, VENDORS } from '@/lib/constants'; 
 
+// Local date (toISOString() is UTC, which turns into tomorrow after 7pm Eastern)
+const localToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Drafts live on the phone so a dropped signal never loses a note
+const draftKey = (accountId: string | null) => `cksales:visit-draft:${accountId || 'any'}`;
+const readDraft = (key: string) => { try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch { return null; } };
+const writeDraft = (key: string, v: unknown) => { try { window.localStorage.setItem(key, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
+const clearDraft = (key: string) => { try { window.localStorage.removeItem(key); } catch { /* ignore */ } };
+
 export default function NewCall() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading...</div>}>
+      <NewCallForm />
+    </Suspense>
+  );
+}
+
+function NewCallForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedAccountId = searchParams.get('accountId');
@@ -15,9 +35,10 @@ export default function NewCall() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   // Form State (Starts blank for a new call)
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(localToday());
   const [repName, setRepName] = useState('');
   const me = useMe();
   const [repTouched, setRepTouched] = useState(false);
@@ -36,6 +57,43 @@ export default function NewCall() {
       .map(v => VENDORS.find(x => squash(x) === squash(v)))
       .filter((v): v is string => !!v)
   );
+
+  const [saveError, setSaveError] = useState('');
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const key = draftKey(preselectedAccountId);
+
+  // Bring back an unsaved note from last time (read after the page has loaded on the phone)
+  useEffect(() => {
+    const t = setTimeout(() => {
+    const d = readDraft(key);
+    if (d && (d.notes || d.shareHeadline)) {
+      if (d.date) setDate(d.date);
+      if (d.accountId) setAccountId(d.accountId);
+      if (d.type) setType(d.type);
+      setNotes(d.notes || '');
+      if (Array.isArray(d.selectedVendors)) setSelectedVendors(d.selectedVendors);
+      setShared(!!d.shared);
+      setShareHeadline(d.shareHeadline || '');
+      setRestoredDraft(true);
+    }
+    setDraftReady(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [key]);
+
+  // Save the draft on this phone as they type
+  useEffect(() => {
+    if (!draftReady) return;
+    if (notes.trim() || shareHeadline.trim()) {
+      writeDraft(key, { date, accountId, type, notes, selectedVendors, shared, shareHeadline, savedAt: Date.now() });
+    }
+  }, [draftReady, key, date, accountId, type, notes, selectedVendors, shared, shareHeadline]);
+
+  const discardDraft = () => {
+    clearDraft(key);
+    setNotes(''); setShareHeadline(''); setShared(false); setRestoredDraft(false);
+  };
 
   useEffect(() => {
     async function fetchAccounts() {
@@ -69,7 +127,17 @@ export default function NewCall() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
+    setSaveError('');
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setSaveError("You're offline. Your note is saved on this phone. Tap Save again when you have signal.");
+      savingRef.current = false;
+      setIsSaving(false);
+      return;
+    }
 
     const { error } = await supabase
       .from('calls')
@@ -87,9 +155,14 @@ export default function NewCall() {
 
     if (error) {
       console.error("Error logging call:", error);
-      alert("Failed to log visit: " + error.message);
+      const signedOut = /jwt|token|auth|401/i.test(`${error.message} ${error.code || ''}`);
+      setSaveError(signedOut
+        ? "You've been signed out. Your note is saved on this phone. Sign in again and it will be here."
+        : `Couldn't save (${error.message}). Your note is saved on this phone. Check your signal and tap Save again.`);
+      savingRef.current = false;
       setIsSaving(false);
     } else {
+      clearDraft(key);
       // If we came from an account profile, send them back there. Otherwise, go to dashboard.
       if (preselectedAccountId) {
         router.push(`/accounts/${preselectedAccountId}`);
@@ -112,6 +185,19 @@ export default function NewCall() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
+
+        {restoredDraft && (
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-3">
+
+            <p className="text-sm font-medium text-amber-900">Restored your unsaved note.</p>
+
+            <button type="button" onClick={discardDraft} className="shrink-0 text-sm font-bold text-amber-900 underline">Discard</button>
+
+          </div>
+
+        )}
+
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -208,6 +294,10 @@ export default function NewCall() {
           setHeadline={setShareHeadline}
           companyName={companyFor(accountId)}
         />
+
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 text-red-800 text-sm font-bold rounded-xl p-4">{saveError}</div>
+        )}
 
         <div className="pt-4 border-t border-gray-100">
           <button 

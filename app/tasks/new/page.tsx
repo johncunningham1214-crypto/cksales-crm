@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SALES_TEAM } from '@/lib/constants';
@@ -16,6 +16,7 @@ function NewTaskForm() {
   const [repName, setRepName] = useState('');
   const [status, setStatus] = useState('Pending');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     async function fetchAccounts() {
@@ -34,6 +35,10 @@ function NewTaskForm() {
     if (!accountId) return alert("Please select an account.");
     if (!repName) return alert("Please select who this is assigned to.");
     
+    if (savingRef.current) return;
+    
+    savingRef.current = true;
+    
     setIsSubmitting(true);
 
     // IMPORTANT: Change 'tasks' to 'action_items' below if that's what your database uses!
@@ -50,6 +55,7 @@ function NewTaskForm() {
     if (error) {
       console.error("Error saving task:", error);
       alert("Failed to save task: " + error.message);
+      savingRef.current = false;
       setIsSubmitting(false);
     } else {
       router.push(`/accounts/${accountId}`);

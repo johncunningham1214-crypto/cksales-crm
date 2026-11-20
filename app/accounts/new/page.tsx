@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ export default function NewAccount() {
   const [parentId, setParentId] = useState('');
   const [majorAccounts, setMajorAccounts] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     async function fetchParents() {
@@ -42,6 +43,8 @@ export default function NewAccount() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
 
     const { data, error } = await supabase
@@ -62,6 +65,7 @@ export default function NewAccount() {
     if (error) {
       console.error("Error adding account:", error.message);
       alert("Failed to add account: " + error.message);
+      savingRef.current = false;
       setIsSaving(false);
     } else {
       // Go straight to the new branch so the rep can check off our lines

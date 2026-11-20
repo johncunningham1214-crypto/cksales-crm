@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ function NewContactForm() {
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     async function fetchAccounts() {
@@ -37,6 +38,10 @@ function NewContactForm() {
     e.preventDefault();
     if (!accountId) return alert("Please select a branch.");
     if (!name.trim()) return alert("Please enter a name.");
+    
+    if (savingRef.current) return;
+    
+    savingRef.current = true;
     
     setIsSubmitting(true);
 
@@ -56,6 +61,7 @@ function NewContactForm() {
     if (error) {
       console.error("Error saving contact:", error);
       alert("Failed to save contact: " + error.message);
+      savingRef.current = false;
       setIsSubmitting(false);
     } else {
       // Success! Route them directly to the new profile page you built earlier

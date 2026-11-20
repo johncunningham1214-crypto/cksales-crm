@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../../lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 
@@ -18,6 +18,7 @@ export default function EditContactForm() {
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     async function fetchAccounts() {
@@ -57,6 +58,10 @@ export default function EditContactForm() {
     e.preventDefault();
     if (!accountId) return alert("Please select a branch for this contact.");
     
+    if (savingRef.current) return;
+    
+    savingRef.current = true;
+    
     setIsSubmitting(true);
 
     const { error } = await supabase
@@ -67,6 +72,7 @@ export default function EditContactForm() {
     if (error) {
       console.error("Error updating contact:", error);
       alert("Failed to update contact: " + error.message);
+      savingRef.current = false;
       setIsSubmitting(false);
     } else {
       router.back();
@@ -79,6 +85,10 @@ export default function EditContactForm() {
     const isConfirmed = window.confirm("Are you sure you want to delete this contact? This cannot be undone.");
     if (!isConfirmed) return;
 
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+
     setIsSubmitting(true);
     const { error } = await supabase
       .from('contacts')
@@ -88,6 +98,7 @@ export default function EditContactForm() {
     if (error) {
       console.error("Error deleting contact:", error);
       alert("Failed to delete contact.");
+      savingRef.current = false;
       setIsSubmitting(false);
     } else {
       // If deleted successfully, send them back to the master Rolodex

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { localISODate } from '@/lib/dates';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import BranchLines from '@/app/components/BranchLines';
@@ -69,7 +70,7 @@ export default function AccountProfile() {
 
   useEffect(() => {
     async function fetchAccountData() {
-      const today = new Date().toISOString().split('T')[0];
+      const today = localISODate();
 
       // 1. Fetch the main account details
       const { data: accountData } = await supabase
@@ -191,7 +192,7 @@ export default function AccountProfile() {
                   <div key={contact.id} className="p-6 hover:bg-gray-50 transition-colors">
                     <Link href={`/contacts/${contact.id}/edit`} className="group flex items-center gap-2 mb-0.5">
                       <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{contact.name}</h3>
-                      <span className="opacity-0 group-hover:opacity-100 text-xs font-bold text-blue-600 transition-opacity">✎ Edit</span>
+                      <span className=" text-xs font-bold text-blue-600 transition-opacity">✎ Edit</span>
                     </Link>
                     <p className="text-sm text-gray-500 font-medium mb-3">{contact.title || 'Staff'}</p>
                     <div className="text-sm text-gray-600 space-y-1.5">
@@ -376,9 +377,9 @@ export default function AccountProfile() {
                       {/* NEW: Edit Call Button */}
                       <Link 
                         href={`/calls/${call.id}/edit`} 
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md"
+                        className="shrink-0 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md"
                       >
-                        ✎ Edit Note
+                        ✎ Edit
                       </Link>
                     </div>
 

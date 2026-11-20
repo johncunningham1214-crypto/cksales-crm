@@ -3,7 +3,7 @@
 // One-time "Which one is you?" step. Links this login's email to a
 // salesman name for good (only an admin can change it afterward).
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { SALES_TEAM } from '@/lib/constants';
 import { fetchMe, ME_CHANGED, OPEN_WHO_ARE_YOU } from '@/lib/me';
@@ -14,6 +14,7 @@ export default function WhoAreYou() {
   const [taken, setTaken] = useState<string[]>([]);
   const [picked, setPicked] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -35,6 +36,8 @@ export default function WhoAreYou() {
 
   async function confirm() {
     if (!picked || !email) return;
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
     setError('');
     const { error } = await supabase.from('team_members').insert([{ email, name: picked }]);
@@ -42,6 +45,7 @@ export default function WhoAreYou() {
       setError(error.code === '23505'
         ? `${picked} is already linked to another login. If that's wrong, ask John to fix it.`
         : 'Could not save: ' + error.message);
+      savingRef.current = false;
       setIsSaving(false);
       return;
     }

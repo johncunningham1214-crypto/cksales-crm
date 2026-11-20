@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { localISODate } from '@/lib/dates';
 import { SALES_TEAM, VENDORS } from '@/lib/constants'; // NEW: Imported Vendors
 import Link from 'next/link';
 
@@ -14,8 +15,8 @@ export default function CallReport() {
   const lastWeek = new Date(today);
   lastWeek.setDate(lastWeek.getDate() - 7);
 
-  const [startDate, setStartDate] = useState(lastWeek.toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(localISODate(lastWeek));
+  const [endDate, setEndDate] = useState(localISODate(today));
   const [selectedRep, setSelectedRep] = useState('All');
   const [selectedAccount, setSelectedAccount] = useState('All');
   const [selectedVendor, setSelectedVendor] = useState('All'); // NEW: Vendor Filter State

@@ -78,7 +78,7 @@ export default function ContactsDirectory() {
                   <Link href={`/contacts/${contact.id}`} className="group inline-block">
   <h3 className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors flex items-center gap-2">
     {contact.name}
-    <span className="opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity">→</span>
+    <span className=" text-blue-600 transition-opacity">→</span>
   </h3>
 </Link>
                   <p className="text-sm font-medium text-blue-600">{contact.title || 'Staff'}</p>

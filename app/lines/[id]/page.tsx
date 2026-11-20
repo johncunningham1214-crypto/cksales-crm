@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ export default function LineDetail() {
   const [coverage, setCoverage] = useState<Record<string, StateCoverage>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
   const [message, setMessage] = useState('');
 
   // Line details (whole team sees these)
@@ -89,6 +90,8 @@ export default function LineDetail() {
   };
 
   const handleSave = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
     setMessage('');
 
@@ -134,6 +137,7 @@ export default function LineDetail() {
       setMessage('Saved ✓');
       router.refresh();
     }
+    savingRef.current = false;
     setIsSaving(false);
   };
 

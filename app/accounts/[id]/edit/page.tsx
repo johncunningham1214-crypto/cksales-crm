@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ export default function EditAccount() {
   const [availableParents, setAvailableParents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     async function fetchData() {
@@ -67,6 +68,8 @@ export default function EditAccount() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
 
     const { error } = await supabase
@@ -85,6 +88,7 @@ export default function EditAccount() {
     if (error) {
       console.error("Error updating account:", error);
       alert("Failed to update account: " + error.message);
+      savingRef.current = false;
       setIsSaving(false);
     } else {
       router.push(`/accounts/${accountId}`);

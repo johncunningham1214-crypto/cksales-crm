@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -13,6 +13,7 @@ export default function UploadDocument() {
   const [category, setCategory] = useState('Spec Sheet');
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     async function fetchVendors() {
@@ -31,6 +32,10 @@ export default function UploadDocument() {
     if (!file) return alert("Please select a file to upload.");
     if (!vendorId) return alert("Please select a vendor.");
     
+    if (savingRef.current) return;
+    
+    savingRef.current = true;
+    
     setIsSubmitting(true);
 
     // 1. Create a unique file name to prevent overwriting (e.g., 168439002-genteq-motor.pdf)
@@ -46,6 +51,7 @@ export default function UploadDocument() {
     if (uploadError) {
       console.error("Upload Error:", uploadError);
       alert("Failed to upload file: " + uploadError.message);
+      savingRef.current = false;
       setIsSubmitting(false);
       return;
     }
@@ -63,6 +69,7 @@ export default function UploadDocument() {
     if (dbError) {
       console.error("Database Error:", dbError);
       alert("File uploaded, but failed to save database record.");
+      savingRef.current = false;
       setIsSubmitting(false);
     } else {
       router.push('/tech-library');

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
@@ -13,6 +13,7 @@ export default function TechLibraryVendors() {
   const [isAddingVendor, setIsAddingVendor] = useState(false);
   const [newVendorName, setNewVendorName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const savingRef = useRef(false); // blocks a second tap before the screen updates
 
   useEffect(() => {
     fetchVendors();
@@ -34,6 +35,10 @@ export default function TechLibraryVendors() {
     e.preventDefault();
     if (!newVendorName.trim()) return;
     
+    if (savingRef.current) return;
+    
+    savingRef.current = true;
+    
     setIsSubmitting(true);
 
     const { error } = await supabase
@@ -49,6 +54,8 @@ export default function TechLibraryVendors() {
       setIsAddingVendor(false);
       fetchVendors();
     }
+    
+    savingRef.current = false;
     
     setIsSubmitting(false);
   };
