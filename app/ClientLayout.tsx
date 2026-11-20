@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { usePathname, useRouter } from 'next/navigation';
 import GlobalSearch from './components/GlobalSearch';
+import WhoAreYou from './components/WhoAreYou';
 import Link from 'next/link';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -86,6 +87,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     <>
       <Link href="/" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname === '/' ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
         <span className="w-6 text-center text-lg">📊</span><span>Dashboard</span>
+      </Link>
+      <Link href="/team" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.startsWith('/team') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
+        <span className="w-6 text-center text-lg">💡</span><span>Team Notes</span>
       </Link>
       <Link href="/calendar" className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${pathname.includes('/calendar') ? 'bg-blue-600 text-white' : 'text-gray-100 hover:bg-white/10 hover:text-white'}`}>
         <span className="w-6 text-center text-lg">🗓️</span><span>Schedule</span>
@@ -188,6 +192,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
       )}
+
+      {/* One-time "Which one is you?" */}
+      <WhoAreYou />
 
       {/* MAIN APP CONTAINER */}
       <div className="flex flex-1 overflow-hidden relative">

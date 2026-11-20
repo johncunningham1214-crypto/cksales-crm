@@ -39,7 +39,10 @@ export type LineTrend = {
 // For one line: use the branch's own numbers when we have them, otherwise
 // the parent company's. Prefer POS over commission statements.
 export function lineTrend(rows: SaleRow[], vendorId: Id, accountId: Id, parentId?: Id | null): LineTrend | null {
-  const forLine = rows.filter(r => same(r.vendor_id, vendorId));
+  // Skip the current month: it's still incomplete and would look like a drop
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const forLine = rows.filter(r => same(r.vendor_id, vendorId) && r.period < thisMonth);
   let level: 'branch' | 'company' = 'branch';
   let pick = forLine.filter(r => same(r.account_id, accountId));
   if (pick.length === 0 && parentId != null) {

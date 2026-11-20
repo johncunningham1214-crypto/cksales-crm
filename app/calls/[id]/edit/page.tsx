@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import ShareToggle from '@/app/components/ShareToggle';
 import { useRouter, useParams } from 'next/navigation';
 import { SALES_TEAM, VENDORS } from '@/lib/constants';
 
@@ -20,6 +21,9 @@ export default function EditCall() {
   const [accountId, setAccountId] = useState('');
   const [type, setType] = useState('Field Visit');
   const [notes, setNotes] = useState('');
+  const [shared, setShared] = useState(false);
+  const [shareHeadline, setShareHeadline] = useState('');
+  const [sharedAt, setSharedAt] = useState<string | null>(null);
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
 
   useEffect(() => {
@@ -27,7 +31,7 @@ export default function EditCall() {
       // 1. Fetch Accounts for the dropdown
       const { data: accountsData } = await supabase
         .from('accounts')
-        .select('id, name')
+        .select('id, name, parent_id, is_parent')
         .order('name');
         
       if (accountsData) setAccounts(accountsData);
@@ -46,6 +50,9 @@ export default function EditCall() {
         setType(callData.type || 'Field Visit');
         setNotes(callData.notes || '');
         setSelectedVendors(callData.vendors || []);
+        setShared(!!callData.shared);
+        setShareHeadline(callData.share_headline || '');
+        setSharedAt(callData.shared_at || null);
       }
       
       setIsLoading(false);
@@ -62,6 +69,14 @@ export default function EditCall() {
     );
   };
 
+  // Parent company a shared visit gets pinned to
+  const companyFor = (id: string) => {
+    const acc = accounts.find(a => String(a.id) === String(id));
+    if (!acc) return null;
+    if (acc.is_parent) return acc.name;
+    return accounts.find(a => String(a.id) === String(acc.parent_id))?.name || null;
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -74,7 +89,10 @@ export default function EditCall() {
         account_id: accountId === "" ? null : accountId,
         type,
         notes,
-        vendors: selectedVendors
+        vendors: selectedVendors,
+        shared,
+        share_headline: shared ? (shareHeadline.trim() || null) : null,
+        shared_at: shared ? (sharedAt || new Date().toISOString()) : null
       })
       .eq('id', callId);
 
@@ -204,6 +222,14 @@ export default function EditCall() {
             className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none resize-y"
           ></textarea>
         </div>
+
+        <ShareToggle
+          shared={shared}
+          setShared={setShared}
+          headline={shareHeadline}
+          setHeadline={setShareHeadline}
+          companyName={companyFor(accountId)}
+        />
 
         <div className="pt-4 border-t border-gray-100">
           <button 

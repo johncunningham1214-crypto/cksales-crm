@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import BranchLines from '@/app/components/BranchLines';
+import TeamNotes from '@/app/components/TeamNotes';
 
 export default function AccountProfile() {
   const params = useParams();
@@ -284,6 +285,8 @@ export default function AccountProfile() {
         {/* RIGHT COLUMN: Events, Tasks & Activity Stack */}
         <div className="lg:col-span-2 space-y-8">
           
+          <TeamNotes accountId={account.id} parentId={account.parent_id} isParent={account.is_parent} />
+
           {/* Upcoming Visits */}
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">

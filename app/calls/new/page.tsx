@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import ShareToggle from '@/app/components/ShareToggle';
+import { useMe } from '@/lib/me';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SALES_TEAM, VENDORS } from '@/lib/constants'; 
 
@@ -17,9 +19,15 @@ export default function NewCall() {
   // Form State (Starts blank for a new call)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [repName, setRepName] = useState('');
+  const me = useMe();
+  const [repTouched, setRepTouched] = useState(false);
+  // Default the salesman to whoever is logged in (they can still change it)
+  const shownRep = repTouched ? repName : (repName || me.name || '');
   const [accountId, setAccountId] = useState(preselectedAccountId || '');
   const [type, setType] = useState('Field Visit');
   const [notes, setNotes] = useState('');
+  const [shared, setShared] = useState(false);
+  const [shareHeadline, setShareHeadline] = useState('');
   // Lines passed in from the pre-call brief (?vendors=NuCalgon,Inficon), matched loosely to our list
   const squash = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
   const [selectedVendors, setSelectedVendors] = useState<string[]>(() =>
@@ -33,7 +41,7 @@ export default function NewCall() {
     async function fetchAccounts() {
       const { data } = await supabase
         .from('accounts')
-        .select('id, name')
+        .select('id, name, parent_id, is_parent')
         .eq('status', 'Active')
         .order('name');
         
@@ -51,6 +59,14 @@ export default function NewCall() {
     );
   };
 
+  // Parent company a shared visit gets pinned to
+  const companyFor = (id: string) => {
+    const acc = accounts.find(a => String(a.id) === String(id));
+    if (!acc) return null;
+    if (acc.is_parent) return acc.name;
+    return accounts.find(a => String(a.id) === String(acc.parent_id))?.name || null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -59,11 +75,14 @@ export default function NewCall() {
       .from('calls')
       .insert([{
         date,
-        rep_name: repName,
+        rep_name: shownRep,
         account_id: accountId === "" ? null : accountId,
         type,
         notes,
-        vendors: selectedVendors
+        vendors: selectedVendors,
+        shared,
+        share_headline: shared ? (shareHeadline.trim() || null) : null,
+        shared_at: shared ? new Date().toISOString() : null
       }]);
 
     if (error) {
@@ -110,8 +129,8 @@ export default function NewCall() {
             <label className="block text-sm font-bold text-gray-700 mb-2">Salesman *</label>
             <select 
               required
-              value={repName}
-              onChange={(e) => setRepName(e.target.value)}
+              value={shownRep}
+              onChange={(e) => { setRepTouched(true); setRepName(e.target.value); }}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
             >
               <option value="" disabled>Select rep...</option>
@@ -181,6 +200,14 @@ export default function NewCall() {
             className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none resize-y"
           ></textarea>
         </div>
+
+        <ShareToggle
+          shared={shared}
+          setShared={setShared}
+          headline={shareHeadline}
+          setHeadline={setShareHeadline}
+          companyName={companyFor(accountId)}
+        />
 
         <div className="pt-4 border-t border-gray-100">
           <button 

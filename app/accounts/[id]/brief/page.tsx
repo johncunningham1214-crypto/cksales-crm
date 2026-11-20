@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import BranchLines from '@/app/components/BranchLines';
+import TeamNotes from '@/app/components/TeamNotes';
 import { fetchLines, fetchCoverage, coverageFor } from '@/lib/lines';
 import { periodLabel } from '@/lib/importer';
 import {
@@ -228,6 +229,9 @@ export default function PreCallBrief() {
           <p className="mt-3 font-medium text-blue-50">Nothing flagged. Ask what&apos;s moving and walk the shelves.</p>
         )}
       </div>
+
+      {/* WHAT'S WORKED AT SISTER BRANCHES */}
+      <TeamNotes accountId={account.id} parentId={account.parent_id} isParent={account.is_parent} companyName={account.is_parent ? account.name : parent?.name} limit={3} />
 
       {/* 2. PEOPLE */}
       <div className={card}>
